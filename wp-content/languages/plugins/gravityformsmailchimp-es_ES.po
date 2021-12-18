@@ -1,0 +1,194 @@
+# Translation of RocketGenius - Gravity Forms Mailchimp Add-On in Spanish (Spain)
+# This file is distributed under the same license as the RocketGenius - Gravity Forms Mailchimp Add-On package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2020-06-30 21:34:25+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: GlotPress/2.4.0-alpha\n"
+"Language: es\n"
+"Project-Id-Version: RocketGenius - Gravity Forms Mailchimp Add-On\n"
+
+#. Author of the plugin
+msgid "Gravity Forms"
+msgstr "Gravity Forms"
+
+#: class-gf-mailchimp.php:1575
+msgid "Unable to add note to subscriber: %s"
+msgstr "No fue posible añadir nota para el suscriptor: %s"
+
+#: class-gf-mailchimp.php:1557
+msgid "Unable to add/update subscriber tags: %s"
+msgstr "No fue posible añadir/actualizar las etiquetas de sucriptores %s"
+
+#: class-gf-mailchimp.php:1532
+msgid "Unable to add/update subscriber: %s"
+msgstr "No fue posible añadir/actualizar al suscriptor: %s"
+
+#: class-gf-mailchimp.php:1255
+msgid "Unable to check if email address is already used by a member: %s"
+msgstr "No fue posible comprobar si la dirección de correo electrónico ya está siendo utilizada por otro miembro: %s"
+
+#: class-gf-mailchimp.php:1144
+msgid "A valid Email address must be provided."
+msgstr "Se debe suministrar una dirección de correo electrónico válida."
+
+#: class-gf-mailchimp.php:1129
+msgid "Unable to process feed because API could not be initialized."
+msgstr "No se pudo procesar el feed porque no se pudo inicializar la API."
+
+#: class-gf-mailchimp.php:1098
+msgid "Abusing this may cause your Mailchimp account to be suspended."
+msgstr "Abusar de esto puede hacer que tu cuenta de Mailchimp sea suspendida."
+
+#: class-gf-mailchimp.php:989
+msgid "Enable permission if:"
+msgstr "Activar permiso si:"
+
+#: class-gf-mailchimp.php:912
+msgid "Due to limitations with Mailchimp's API, we are only able to get available Marketing Permissions when the selected audience has at least one subscriber."
+msgstr "Debido a las limitaciones con la API de Mailchimp, solo podemos obtener los permisos de marketing disponibles cuando el público seleccionado tiene, al menos, un suscriptor."
+
+#: class-gf-mailchimp.php:911
+msgid "You must have at least one audience subscriber to configure Marketing Permissions."
+msgstr "Debes tener al menos un suscriptor de audiencia para configurar permisos de marketing."
+
+#: class-gf-mailchimp.php:865
+msgid "If"
+msgstr "Si"
+
+#: class-gf-mailchimp.php:861
+msgid "Always"
+msgstr "Siempre"
+
+#: class-gf-mailchimp.php:852
+msgid "Assign to group:"
+msgstr "Assignar a grupo:"
+
+#: class-gf-mailchimp.php:711
+msgid "Mailchimp List"
+msgstr "Lista de Mailchimp"
+
+#: class-gf-mailchimp.php:619
+msgid "Email Address"
+msgstr "Dirección de correo electrónico"
+
+#: class-gf-mailchimp.php:573
+msgid "Select a Mailchimp Audience"
+msgstr "Selecciona una audiencia de Mailchimp"
+
+#: class-gf-mailchimp.php:561
+msgid "No audiences found."
+msgstr "No se han encontrado audiencias."
+
+#: class-gf-mailchimp.php:548 class-gf-mailchimp.php:561
+msgid "Could not load Mailchimp contact audiences. %sError: %s"
+msgstr "No se han podido cargar las audiencias de contacto de Mailchimp. %sError: %s"
+
+#: class-gf-mailchimp.php:473
+msgid "When enabled and conditions are met, users will be opted into your Mailchimp audience marketing permissions. If a user is already subscribed to your audience, they will not be opted out of permissions they are already opted into."
+msgstr "Cuando esté habilitado y se cumplan las condiciones, los usuarios se inscribirán en los permisos de marketing de audiencia de Mailchimp. Si un usuario ya está suscrito a tu audiencia, no se le excluirán los permisos que ya ha permitido."
+
+#: class-gf-mailchimp.php:468 class-gf-mailchimp.php:472
+msgid "Marketing Permissions"
+msgstr "Permisos de márketing"
+
+#: class-gf-mailchimp.php:443
+msgid "When conditional logic is enabled, form submissions will only be exported to Mailchimp when the conditions are met. When disabled all form submissions will be exported."
+msgstr "Cuando se habilita la lógica condicional, los envíos de formularios solo se exportarán a Mailchimp cuando se cumplan las condiciones. Cuando se deshabilita, se exportarán todos los envíos de formularios."
+
+#: class-gf-mailchimp.php:438 class-gf-mailchimp.php:442
+msgid "Conditional Logic"
+msgstr "Lógica condicional"
+
+#: class-gf-mailchimp.php:434
+msgid "Note"
+msgstr "Nota"
+
+#: class-gf-mailchimp.php:427
+msgid "Associate tags to your Mailchimp contacts with a comma separated list (e.g. new lead, Gravity Forms, web source). Commas within a merge tag value will be created as a single tag."
+msgstr "Asocia etiquetas a tus contactos de Mailchimp con una lista separada por comas (por ejemplo, nuevo cliente potencial, Gravity Forms, procedentes de la web). Las comas dentro de un valor de etiqueta merge se crearán como una sola etiqueta."
+
+#: class-gf-mailchimp.php:423 class-gf-mailchimp.php:426
+msgid "Tags"
+msgstr "Etiquetas"
+
+#: class-gf-mailchimp.php:415
+msgid "Mark subscriber as VIP"
+msgstr "Marcar el suscriptor como VIP"
+
+#: class-gf-mailchimp.php:410
+msgid "When the double opt-in option is enabled, Mailchimp will send a confirmation email to the user and will only add them to your Mailchimp audience upon confirmation."
+msgstr "Cuando la opción de suscripción doble está habilitada, Mailchimp enviará un correo electrónico de confirmación al usuario y solo los agregará a tu audiencia de Mailchimp tras la confirmación."
+
+#: class-gf-mailchimp.php:404 class-gf-mailchimp.php:409
+msgid "Double Opt-In"
+msgstr "Doble opt-in"
+
+#: class-gf-mailchimp.php:399
+msgid "Options"
+msgstr "Opciones"
+
+#: class-gf-mailchimp.php:394
+msgid "When one or more groups are enabled, users will be assigned to the groups in addition to being subscribed to the Mailchimp audience. When disabled, users will not be assigned to groups."
+msgstr "Cuando uno o más grupos están habilitados, los usuarios se asignarán a los grupos además de estar suscritos a la audiencia de Mailchimp. Cuando se deshabilita, los usuarios no se asignarán a ningún grupo."
+
+#: class-gf-mailchimp.php:388 class-gf-mailchimp.php:393
+msgid "Groups"
+msgstr "Grupos"
+
+#: class-gf-mailchimp.php:383
+msgid "Associate your Mailchimp merge tags to the appropriate Gravity Form fields by selecting the appropriate form field from the list."
+msgstr "Asocia tus etiquetas merge de Mailchimp a los campos de Gravity Forms adecuados seleccionando el campo de formulario adecuado de la lista."
+
+#: class-gf-mailchimp.php:377 class-gf-mailchimp.php:382
+msgid "Map Fields"
+msgstr "Asignar campos"
+
+#: class-gf-mailchimp.php:367
+msgid "Select the Mailchimp audience you would like to add your contacts to."
+msgstr "Selecciona la audiencia de Mailchimp a la que quieras añadir tus contactos."
+
+#: class-gf-mailchimp.php:361 class-gf-mailchimp.php:366
+msgid "Mailchimp Audience"
+msgstr "Audiencia de Mailchimp"
+
+#: class-gf-mailchimp.php:356
+msgid "Enter a feed name to uniquely identify this setup."
+msgstr "Introduce un nombre de feed único para identificarlo."
+
+#: class-gf-mailchimp.php:349 class-gf-mailchimp.php:355
+#: class-gf-mailchimp.php:710
+msgid "Name"
+msgstr "Nombre"
+
+#: class-gf-mailchimp.php:345
+msgid "Mailchimp Feed Settings"
+msgstr "Configuración de la fuente de Mailchimp"
+
+#: class-gf-mailchimp.php:316
+msgid "Mailchimp API Key"
+msgstr "Clave de API de Mailchimp"
+
+#: class-gf-mailchimp.php:309
+msgid "Mailchimp makes it easy to send email newsletters to your customers, manage your subscriber audiences, and track campaign performance. Use Gravity Forms to collect customer information and automatically add it to your Mailchimp subscriber audience. If you don't have a Mailchimp account, you can %1$ssign up for one here.%2$s"
+msgstr "Mailchimp facilita el envío de boletines por correo electrónico a tus clientes, la gestión de las audiencias de tus suscriptores y el seguimiento del rendimiento de las campañas. Usa Gravity Forms para recopilar información de los clientes y agregarla automáticamente a tu audiencia de suscriptores de Mailchimp. Si no tienes una cuenta de Mailchimp, puedes %1$sregistrarte para obtener una aquí.%2$s"
+
+#: class-gf-mailchimp.php:228
+msgid "Subscribe user to Mailchimp only when payment is received."
+msgstr "Suscríbete al usuario a Mailchimp solo cuando se reciba el pago."
+
+#. Description of the plugin
+msgid "Integrates Gravity Forms with Mailchimp, allowing form submissions to be automatically sent to your Mailchimp account."
+msgstr "Integra Gravity Forms con Mailchimp, lo que permite que los envíos de formularios se envíen automáticamente a tu cuenta de Mailchimp."
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+msgid "https://gravityforms.com"
+msgstr "https://www.gravityforms.com"
+
+#. Plugin Name of the plugin
+msgid "Gravity Forms Mailchimp Add-On"
+msgstr "Extensión de Gravity Forms para Mailchimp"

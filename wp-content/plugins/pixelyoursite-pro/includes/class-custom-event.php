@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @property bool   enable_time_window
  *
  * @property bool   facebook_enabled
+ * @property string   facebook_pixel_id
  * @property string facebook_event_type
  * @property string facebook_custom_event_type
  * @property bool   facebook_params_enabled
@@ -32,6 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @property array  pinterest_custom_params
  *
  * @property bool   ga_enabled
+ * @property string ga_pixel_id
  * @property string ga_event_action
  * @property string ga_custom_event_action
  * @property string ga_event_category
@@ -57,6 +59,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @property string bing_event_category
  * @property string bing_event_label
  * @property string bing_event_value
+ * @property string bing_pixel_id
+ *
+ * @property bool   tiktok_enabled
+ * @property string tiktok_pixel_id
+ * @property string tiktok_event_type
+ * @property string tiktok_custom_event_type
+ * @property bool   tiktok_params_enabled
+ * @property array  tiktok_params
+ * @property array  tiktok_custom_params
  */
 class CustomEvent {
 
@@ -65,6 +76,78 @@ class CustomEvent {
 	private $title = 'Untitled';
 
 	private $enabled = true;
+
+    public static $currencies = array(
+        'AUD' => 'Australian Dollar',
+        'BRL' => 'Brazilian Real',
+        'CAD' => 'Canadian Dollar',
+        'CZK' => 'Czech Koruna',
+        'DKK' => 'Danish Krone',
+        'EUR' => 'Euro',
+        'HKD' => 'Hong Kong Dollar',
+        'HUF' => 'Hungarian Forint',
+        'IDR' => 'Indonesian Rupiah',
+        'ILS' => 'Israeli New Sheqel',
+        'JPY' => 'Japanese Yen',
+        'KRW' => 'Korean Won',
+        'MYR' => 'Malaysian Ringgit',
+        'MXN' => 'Mexican Peso',
+        'NOK' => 'Norwegian Krone',
+        'NZD' => 'New Zealand Dollar',
+        'PHP' => 'Philippine Peso',
+        'PLN' => 'Polish Zloty',
+        'RON' => 'Romanian Leu',
+        'GBP' => 'Pound Sterling',
+        'SGD' => 'Singapore Dollar',
+        'SEK' => 'Swedish Krona',
+        'CHF' => 'Swiss Franc',
+        'TWD' => 'Taiwan New Dollar',
+        'THB' => 'Thai Baht',
+        'TRY' => 'Turkish Lira',
+        'USD' => 'U.S. Dollar',
+        'ZAR' => 'South African Rands'
+    );
+    public static $tikTokEvents = [
+        //'CustomEvent'   => [],
+        'Search'                => [],
+        'ViewContent'           => [
+            ['type'=>'input','label'=>'content_type','name'=>'pys[event][tiktok_params][content_type]'],
+            ['type'=>'input','label'=>'quantity','name'=>'pys[event][tiktok_params][quantity]'],
+            ['type'=>'input','label'=>'content_id','name'=>'pys[event][tiktok_params][content_id]'],
+            ['type'=>'input','label'=>'value','name'=>'pys[event][tiktok_params][value]'],
+            ['type'=>'currency','label'=>'currency','name'=>'pys[event][tiktok_params][currency]'],
+        ],
+        'ClickButton'           => [],
+        'AddToWishlist'         => [],
+        'AddToCart'             => [
+            ['type'=>'input','label'=>'content_type','name'=>'pys[event][tiktok_params][content_type]'],
+            ['type'=>'input','label'=>'quantity','name'=>'pys[event][tiktok_params][quantity]'],
+            ['type'=>'input','label'=>'content_id','name'=>'pys[event][tiktok_params][content_id]'],
+            ['type'=>'input','label'=>'value','name'=>'pys[event][tiktok_params][value]'],
+            ['type'=>'currency','label'=>'currency','name'=>'pys[event][tiktok_params][currency]'],
+        ],
+        'InitiateCheckout'      => [],
+        'AddPaymentInfo'        => [],
+        'CompletePayment'       => [
+            ['type'=>'input','label'=>'content_type','name'=>'pys[event][tiktok_params][content_type]'],
+            ['type'=>'input','label'=>'quantity','name'=>'pys[event][tiktok_params][quantity]'],
+            ['type'=>'input','label'=>'content_id','name'=>'pys[event][tiktok_params][content_id]'],
+            ['type'=>'input','label'=>'value','name'=>'pys[event][tiktok_params][value]'],
+            ['type'=>'currency','label'=>'currency','name'=>'pys[event][tiktok_params][currency]'],
+        ],
+        'PlaceAnOrder'          => [
+            ['type'=>'input','label'=>'content_type','name'=>'pys[event][tiktok_params][content_type]'],
+            ['type'=>'input','label'=>'quantity','name'=>'pys[event][tiktok_params][quantity]'],
+            ['type'=>'input','label'=>'content_id','name'=>'pys[event][tiktok_params][content_id]'],
+            ['type'=>'input','label'=>'value','name'=>'pys[event][tiktok_params][value]'],
+            ['type'=>'currency','label'=>'currency','name'=>'pys[event][tiktok_params][currency]'],
+        ],
+        'Contact'               => [],
+        'Download'              => [],
+        'SubmitForm'            => [],
+        'CompleteRegistration'  => [],
+        'Subscribe'             => []
+    ];
 	public $GAEvents = array(
 	    "" => array("CustomEvent"=>array()),
 	    "All Properties"    => array(
@@ -160,7 +243,18 @@ class CustomEvent {
 		'facebook_params_enabled'    => false,
 		'facebook_params'            => array(),
 		'facebook_custom_params'     => array(),
-		
+		'facebook_pixel_id'          => 'all',
+
+
+        'tiktok_enabled'           => false,
+        'tiktok_event_type'        => 'Search',
+        'tiktok_custom_event_type' => null,
+        'tiktok_params_enabled'    => false,
+        'tiktok_params'            => array(),
+        'tiktok_custom_params'     => array(),
+        'tiktok_pixel_id'          => 'all',
+
+        'bing_pixel_id'              => 'all',
 		'pinterest_enabled'           => false,
 		'pinterest_event_type'        => 'ViewContent',
 		'pinterest_custom_event_type' => null,
@@ -168,6 +262,7 @@ class CustomEvent {
 		'pinterest_custom_params'     => array(),
 		
 		'ga_enabled'             => false,
+        'ga_pixel_id'            => '',
 		'ga_event_action'        => '_custom',
 		'ga_custom_event_action' => null,
 		'ga_event_category'      => null,
@@ -178,7 +273,7 @@ class CustomEvent {
         'ga_params'             => array(),
         'ga_custom_params'      => array(),
         'ga_custom_params_enabled'    => false,
-        'ga_version'           => "",
+
 		
 		'google_ads_enabled'             => false,
 		'google_ads_conversion_id'       => '_all',
@@ -235,12 +330,25 @@ class CustomEvent {
 			$this->title   = get_the_title( $post_id );
 			
 			$data = get_post_meta( $post_id, '_pys_event_data', true );
-			$this->data = is_array( $data ) ? $data : array();
+
+            // add loaded data to default or use default
+			$this->data = is_array( $data ) ? $data+$this->data : $this->data;
+
+//            if(empty($this->data['ga_pixel_id'])) {
+//                $all = GA()->getAllPixels();
+//                if(count($all) > 0) {
+//                    $this->data['ga_pixel_id'] = $all[0];
+//                } else {
+//                    $this->data['ga_pixel_id'] = '';
+//                    $this->data['ga_enabled'] = false;
+//                    $this->clearGa();
+//                }
+//            }
 
 			$state = get_post_meta( $post_id, '_pys_event_state', true );
 			$this->enabled = $state == 'active' ? true : false;
 
-		}
+        }
 
 	}
 
@@ -429,6 +537,10 @@ class CustomEvent {
 
 		}
 
+        /**
+         * TIKTOK
+         */
+        $this->updateTikTok($args);
 		/**
 		 * FACEBOOK
 		 */
@@ -457,6 +569,9 @@ class CustomEvent {
 
 		// enabled
 		$this->data['facebook_enabled'] = isset( $args['facebook_enabled'] ) && $args['facebook_enabled'] ? true : false;
+
+        $this->data['facebook_pixel_id'] = !empty( $args['facebook_pixel_id'] ) && in_array( $args['facebook_pixel_id'],
+            Facebook()->getAllPixels(false) ) ? $args['facebook_pixel_id'] : 'all';
 
 		// event type
 		$this->data['facebook_event_type'] = isset( $args['facebook_event_type'] ) && in_array( $args['facebook_event_type'], $facebook_event_types )
@@ -604,8 +719,12 @@ class CustomEvent {
 		$this->data['google_ads_enabled'] = isset( $args['google_ads_enabled'] ) && $args['google_ads_enabled'] ? true : false;
 		
 		// conversion id
-		$this->data['google_ads_conversion_id'] = isset( $args['google_ads_conversion_id'] ) && in_array( $args['google_ads_conversion_id'],
-				Ads()->getPixelIDs() ) ? $args['google_ads_conversion_id'] : '_all';
+
+        if(isset( $args['google_ads_conversion_id'] )
+            && in_array( $args['google_ads_conversion_id'], Ads()->getAllPixels(false) )
+        ) {
+            $this->data['google_ads_conversion_id'] = $args['google_ads_conversion_id'];
+        }
 
 		$sanitizeGoogleAdsConversionLabel = function ($label) {
             return wp_kses_post( trim( stripslashes( $label ) ) );
@@ -689,7 +808,8 @@ class CustomEvent {
         $this->data['bing_event_category'] = !empty($args['bing_event_category']) ? sanitize_text_field($args['bing_event_category']) : null;
         $this->data['bing_event_label'] = !empty($args['bing_event_label']) ? sanitize_text_field($args['bing_event_label']) : null;
         $this->data['bing_event_value'] = !empty($args['bing_event_value']) ? sanitize_text_field($args['bing_event_value']) : null;
-		
+        $this->data['bing_pixel_id'] = !empty( $args['bing_pixel_id'] ) && in_array( $args['bing_pixel_id'],
+            Bing()->getAllPixels() ) ? $args['bing_pixel_id'] : 'all';
 		update_post_meta( $this->post_id, '_pys_event_data', $this->data );
 
 	}
@@ -837,8 +957,11 @@ class CustomEvent {
 	}
 
 	public function getGACustomParams() {
-        if($this->getGaVersion() == "4") {
-            return $this->ga_custom_params;
+        if($this->isGaV4()) {
+            if(is_array($this->ga_custom_params)) {
+                return $this->ga_custom_params;
+            }
+            return [];
         }
         $custom = array();
         if($this->ga_event_category) {
@@ -856,8 +979,15 @@ class CustomEvent {
     }
 
     public function getGaParams() {
-        if($this->getGaVersion() == "4")
-	        return $this->ga_params;
+        if($this->isGaV4()) {
+            if(is_array($this->ga_params)) {
+                return $this->ga_params;
+            } else {
+                return [];
+            }
+
+        }
+
         $list = array();
         foreach ($this->GAEvents as $group) {
             foreach ($group as $name => $fields) {
@@ -872,11 +1002,6 @@ class CustomEvent {
         return $list;
     }
 
-    public function getGaVersion() {
-	    if(isset($this->data['ga_version']))
-            return $this->ga_version;
-	    return "";
-    }
 
 	public function getGoogleAnalyticsAction() {
 		return $this->ga_event_action == '_custom' || $this->ga_event_action ==  'CustomEvent' ? $this->ga_custom_event_action : $this->ga_event_action;
@@ -891,29 +1016,53 @@ class CustomEvent {
 	}
 	
 	public function getGoogleAdsCustomParams() {
-		return (array) $this->google_ads_custom_params;
+		return  (array)$this->google_ads_custom_params;
 	}
 
     public function isBingEnabled() {
         return (bool) $this->bing_enabled;
     }
 
+    public function isGaV4() {
+        return strpos($this->data['ga_pixel_id'], 'G') === 0;
+    }
+
+    private function clearGa() {
+        $this->data['ga_params'] = array();
+        $this->data['ga_custom_params'] = array();
+        $this->data['ga_event_action'] = 'CustomEvent';
+        $this->data['ga_custom_event_action']=null;
+        $this->data['ga_non_interactive'] =  false;
+        // old
+        $this->data['ga_event_category'] = null;
+        $this->data['ga_event_label'] = null;
+        $this->data['ga_event_value'] = null;
+    }
+
     private function updateGA( $args) {
-	    if(GA()->isUse4Version()) {
-            $this->data['ga_enabled'] = isset( $args['ga_enabled'] ) && $args['ga_enabled'] ? true : false;
+        $all = GA()->getAllPixels(false);
+        if(!empty( $args['ga_pixel_id'] )
+            && in_array( $args['ga_pixel_id'],$all)) {
+            $this->data['ga_pixel_id'] = $args['ga_pixel_id'];
+        } elseif (count($all) > 0) {
+            $this->data['ga_pixel_id'] = $all[0];
+        } else {
+            $this->data['ga_pixel_id'] = '';
+        }
 
-            if($this->data['ga_enabled']) {
+        $this->data['ga_enabled'] = $this->data['ga_pixel_id'] !== ''
+            && isset( $args['ga_enabled']  )
+            && $args['ga_enabled'];
 
+        if(!$this->data['ga_enabled']) {
+            $this->clearGa();
+        } else {
+            if($this->isGaV4() ) {
                 $this->data['ga_event_action'] = isset( $args['ga_event_action'] )
                     ? sanitize_text_field( $args['ga_event_action'] )
                     : 'view_item';
 
-                $this->data['ga_custom_event_action'] = $this->ga_event_action == '_custom' || $this->ga_event_action == 'CustomEvent' && !empty( $args['ga_custom_event_action'] )
-                    ? sanitizeKey( $args['ga_custom_event_action'] )
-                    : null;
-
                 $this->data['ga_params'] = array();
-                $this->data['ga_version'] = "4";
 
                 foreach ($this->GAEvents as $group) {
                     foreach ($group as $name => $fields) {
@@ -952,59 +1101,131 @@ class CustomEvent {
                     }
 
                 }
-                $this->data['ga_non_interactive'] = isset( $args['ga_non_interactive'] ) && $args['ga_non_interactive'] ? true : false;
+
             } else {
-                $this->data['ga_params'] = array();
-                $this->data['ga_version'] = "";
-                $this->data['ga_custom_params'] = array();
-                $this->data['ga_event_action'] = 'CustomEvent';
-                $this->data['ga_custom_event_action']=null;
-                $this->data['ga_non_interactive'] =  false;
+                $ga_event_actions = array(
+                    '_custom',
+                    'add_payment_info',
+                    'add_to_cart',
+                    'add_to_wishlist',
+                    'begin_checkout',
+                    'checkout_progress',
+                    'generate_lead',
+                    'login',
+                    'purchase',
+                    'refund',
+                    'remove_from_cart',
+                    'search',
+                    'select_content',
+                    'set_checkout_option',
+                    'share',
+                    'sign_up',
+                    'view_item',
+                    'view_item_list',
+                    'view_promotion',
+                    'view_search_results',
+                );
+
+                // event action
+                $this->data['ga_event_action'] = isset( $args['ga_event_action'] ) && in_array( $args['ga_event_action'], $ga_event_actions )
+                    ? sanitize_text_field( $args['ga_event_action'] )
+                    : 'view_item';
+
+                $this->data['ga_event_category']  = ! empty( $args['ga_event_category'] ) ? sanitize_text_field( $args['ga_event_category'] ) : null;
+                $this->data['ga_event_label']     = ! empty( $args['ga_event_label'] ) ? sanitize_text_field( $args['ga_event_label'] ) : null;
+                $this->data['ga_event_value']     = ! empty( $args['ga_event_value'] ) ? sanitize_text_field( $args['ga_event_value'] ) : null;
+
             }
 
-
-        } else {
-            $this->data['ga_enabled'] = isset( $args['ga_enabled'] ) && $args['ga_enabled'] ? true : false;
-
-            $ga_event_actions = array(
-                '_custom',
-                'add_payment_info',
-                'add_to_cart',
-                'add_to_wishlist',
-                'begin_checkout',
-                'checkout_progress',
-                'generate_lead',
-                'login',
-                'purchase',
-                'refund',
-                'remove_from_cart',
-                'search',
-                'select_content',
-                'set_checkout_option',
-                'share',
-                'sign_up',
-                'view_item',
-                'view_item_list',
-                'view_promotion',
-                'view_search_results',
-            );
-
-            // event action
-            $this->data['ga_event_action'] = isset( $args['ga_event_action'] ) && in_array( $args['ga_event_action'], $ga_event_actions )
-                ? sanitize_text_field( $args['ga_event_action'] )
-                : 'view_item';
-
-            // custom event type
-            $this->data['ga_custom_event_action'] = $this->ga_event_action == '_custom' && !empty( $args['ga_custom_event_action'] )
+            $this->data['ga_custom_event_action'] = $this->ga_event_action == '_custom'
+            || ($this->ga_event_action == 'CustomEvent' && !empty( $args['ga_custom_event_action'] ))
                 ? sanitizeKey( $args['ga_custom_event_action'] )
                 : null;
-
-            $this->data['ga_event_category']  = ! empty( $args['ga_event_category'] ) ? sanitize_text_field( $args['ga_event_category'] ) : null;
-            $this->data['ga_event_label']     = ! empty( $args['ga_event_label'] ) ? sanitize_text_field( $args['ga_event_label'] ) : null;
-            $this->data['ga_event_value']     = ! empty( $args['ga_event_value'] ) ? sanitize_text_field( $args['ga_event_value'] ) : null;
             $this->data['ga_non_interactive'] = isset( $args['ga_non_interactive'] ) && $args['ga_non_interactive'] ? true : false;
         }
+    }
 
+    private function updateTikTok($args) {
+        $tiktok_event_types = ['CustomEvent','ViewContent','ClickButton','Search',
+            'AddToWishlist','AddToCart','InitiateCheckout','AddPaymentInfo',
+            'CompletePayment','PlaceAnOrder','Contact','Download','SubmitForm',
+            'CompleteRegistration','Subscribe'];
+        $standard_params = [
+            'content_id',
+            'content_type',
+            'content_category',
+            'content_name',
+            'currency',
+            'value',
+            'quantity',
+            'price',
+            'query',
+        ];
+        // enabled
+        $this->data['tiktok_enabled'] = isset( $args['tiktok_enabled'] ) && $args['tiktok_enabled'] ? true : false;
 
+        //pixel id
+        $this->data['tiktok_pixel_id'] = !empty( $args['tiktok_pixel_id'] )
+        && in_array( $args['tiktok_pixel_id'], Tiktok()->getAllPixels() )
+            ? $args['tiktok_pixel_id'] : 'all';
+
+        // event type
+        $this->data['tiktok_event_type'] = isset( $args['tiktok_event_type'] ) && in_array( $args['tiktok_event_type'], $tiktok_event_types )
+            ? sanitize_text_field( $args['tiktok_event_type'] )
+            : 'ViewContent';
+
+        // custom event type
+        $this->data['tiktok_custom_event_type'] = $this->tiktok_event_type == 'CustomEvent' && ! empty( $args['tiktok_custom_event_type'] )
+            ? sanitizeKey( $args['tiktok_custom_event_type'] )
+            : null;
+
+        // params enabled
+        $this->data['tiktok_params_enabled'] = isset( $args['tiktok_params_enabled'] ) && $args['tiktok_params_enabled'] ? true : false;
+
+        // params
+        if ( $this->tiktok_params_enabled && isset( $args['tiktok_params'] ) && $this->tiktok_event_type !== 'CustomEvent' ) {
+
+            $params = [];
+            foreach ($standard_params as $standard) {
+                $params[$standard] = ! empty( $args['tiktok_params'][$standard] ) ? sanitize_text_field( $args['tiktok_params'][$standard] ) : null;
+            }
+        } else {
+            // clear all
+            $params = [];
+            foreach ($standard_params as $standard) {
+                $params[$standard] =  null;
+            }
+        }
+        $this->data['tiktok_params'] = $params;
+
+        // custom params
+        $this->data['tiktok_custom_params'] = array();
+        if ( $this->tiktok_params_enabled && isset( $args['tiktok_custom_params'] ) ) {
+
+            foreach ( $args['tiktok_custom_params'] as $custom_param ) {
+
+                if ( ! empty( $custom_param['name'] ) && ! empty( $custom_param['value'] ) ) {
+
+                    $this->data['tiktok_custom_params'][] = array(
+                        'name'  => sanitize_text_field( $custom_param['name'] ),
+                        'value' => sanitize_text_field( $custom_param['value'] ),
+                    );
+
+                }
+
+            }
+
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    public function isTikTokEnabled() {
+        return (bool) $this->tiktok_enabled;
+    }
+
+    public function getTikTokEventType() {
+        return $this->tiktok_event_type == 'CustomEvent' ? $this->tiktok_custom_event_type : $this->tiktok_event_type;
     }
 }

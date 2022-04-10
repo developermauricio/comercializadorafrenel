@@ -94,6 +94,24 @@ function getWooProductContentId( $product_id ) {
     return $value;
 }
 
+function getWooEventCartItemId( $item ) {
+
+    if ( PixelYourSite\GA()->getOption( 'woo_variable_as_simple' )
+        && isset( $item['parent_id'] )
+        && $item['parent_id'] !== 0 )
+    {
+        $product_id = $item['parent_id'];
+    } else {
+        $product_id = $item['product_id'];
+    }
+
+    return $product_id;
+}
+/**
+ * @deprecated use getWooEventCartItemId
+ * @param $item
+ * @return mixed
+ */
 function getWooCartItemId( $item ) {
 
     if ( ! PixelYourSite\GA()->getOption( 'woo_variable_as_simple' ) && isset( $item['variation_id'] ) && $item['variation_id'] !== 0 ) {

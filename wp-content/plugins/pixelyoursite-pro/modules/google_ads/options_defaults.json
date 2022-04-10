@@ -2,12 +2,6 @@
   "enabled": true,
   "ads_ids": "",
   "pixel_lang": "",
-  "click_event_enabled": true,
-  "watchvideo_event_enabled": true,
-  "complete_registration_event_enabled": true,
-  "form_event_enabled": true,
-  "comment_event_enabled": true,
-  "download_event_enabled": true,
 
   "woo_variable_as_simple": false,
   "woo_content_id": "product_id",

@@ -102,7 +102,10 @@ include "html-popovers.php";
                             /** @noinspection PhpIncludeInspection */
                             include PYS_PATH . '/modules/google_ads/views/html-settings.php';
                             break;
-		                    
+                        case 'tiktok_settings':
+                            /** @noinspection PhpIncludeInspection */
+                            include PYS_PATH . '/modules/tiktok/views/html-settings.php';
+                            break;
                         case 'gdpr':
 	                        include "html-gdpr.php";
                             break;
@@ -110,6 +113,9 @@ include "html-popovers.php";
                         case 'reset_settings':
 	                        include "html-reset.php";
 	                        break;
+                        case 'logs':
+                            include "html-logs.php";
+                            break;
 
                         default:
                             do_action( 'pys_admin_' . getCurrentAdminTab() );
@@ -147,7 +153,8 @@ include "html-popovers.php";
 
                         <a class="nav-item nav-link" href="https://www.pixelyoursite.com/documentation"
                            target="_blank" style="font-weight: bold;">HELP</a>
-    
+                        <a href="<?php echo esc_url( buildAdminUrl( 'pixelyoursite', 'logs' ) ); ?>"
+                           class="nav-item nav-link">Logs</a>
                     </nav>
                     
                     <?php if ( 'woo' == getCurrentAdminTab() ) : ?>

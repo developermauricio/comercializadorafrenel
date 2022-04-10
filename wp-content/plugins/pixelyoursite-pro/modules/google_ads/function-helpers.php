@@ -23,6 +23,21 @@ function getWooFullItemId( $item_id ) {
 	return trim( $prefix ) . $content_id . trim( $suffix );
 }
 
+function getWooEventCartItemId( $product ) {
+
+    if ( PixelYourSite\Ads()->getOption( 'woo_variable_as_simple' ) && isset( $product['parent_id'] ) && $product['parent_id'] !== 0 ) {
+        return $product['parent_id'];
+    } else {
+        return $product['product_id'];
+    }
+
+}
+
+/**
+ * @deprecated use getWooEventCartItemId
+ * @param $item
+ * @return mixed
+ */
 function getWooCartItemId( $item ) {
 
     if ( ! PixelYourSite\Ads()->getOption( 'woo_variable_as_simple' ) && isset( $item['variation_id'] ) && $item['variation_id'] !== 0 ) {
@@ -55,7 +70,7 @@ function getWooProductDataId( $item ) {
  */
 function renderConversionLabelInputs($eventKey) {
 
-    $ids = PixelYourSite\Ads()->getPixelIDs();
+    $ids = PixelYourSite\Ads()->getAllPixels();
     $count = count($ids);
     $conversion_labels = (array) PixelYourSite\Ads()->getOption("{$eventKey}_conversion_labels");
 
@@ -120,7 +135,7 @@ function getConversionIDs($eventKey) {
 
     // Conversion labels for specified event
     $labels = PixelYourSite\Ads()->getOption($eventKey . '_conversion_labels');
-    $tag_ids = PixelYourSite\Ads()->getPixelIDs();
+    $tag_ids = PixelYourSite\Ads()->getAllPixels();
     $conversion_ids = [];
 
     if($eventKey == "woo_purchase") {

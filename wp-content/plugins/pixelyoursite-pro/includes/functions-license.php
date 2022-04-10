@@ -279,7 +279,6 @@ function updateLicense( $plugin ) {
  * @return array|mixed|object|\WP_Error
  */
 function licenseActivate( $license_key, $plugin ) {
-
 	return (object)array("success"=>true, "license"=>"valid", "expires"=>"2048-06-06");
 
 

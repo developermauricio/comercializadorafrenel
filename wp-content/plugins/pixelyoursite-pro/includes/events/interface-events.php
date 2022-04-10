@@ -39,10 +39,21 @@ abstract class EventsFactory {
 
                 foreach ($events as $event) {
                     foreach ( PYS()->getRegisteredPixels() as $pixel ) {
-                        $pixel_event = clone $event;
-                        $isSuccess = $pixel->addParamsToEvent( $pixel_event );
-                        if(!$isSuccess || !apply_filters("pys_validate_pixel_event",true,$pixel_event,$pixel)) continue;
-                        $eventsList[$pixel->getSlug()][] = $pixel_event;
+                        if(method_exists($pixel,'generateEvents')) {
+                            $pixelEvents =  $pixel->generateEvents( $event );
+                            foreach ($pixelEvents as $pixelEvent) {
+                                if(apply_filters("pys_validate_pixel_event",true,$pixelEvent,$pixel)) {
+                                    $eventsList[$pixel->getSlug()][] = $pixelEvent;
+                                }
+                            }
+                        } else {
+                            // deprecate
+                            $pixel_event = clone $event;
+                            $isSuccess = $pixel->addParamsToEvent( $pixel_event );
+                            if(!$isSuccess || !apply_filters("pys_validate_pixel_event",true,$pixel_event,$pixel)) continue;
+                            $eventsList[$pixel->getSlug()][] = $pixel_event;
+                        }
+
                     }
                 }
             }

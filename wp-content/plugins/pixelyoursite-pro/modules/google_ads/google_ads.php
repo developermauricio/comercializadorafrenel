@@ -64,13 +64,12 @@ class GoogleAds extends Settings implements Pixel {
 	public function configured() {
 
         $license_status = PYS()->getOption( 'license_status' );
-        $ads_ids = $this->getPixelIDs();
-
+        $ads_ids = $this->getAllPixels();
+        $disabledPixel =  apply_filters( 'pys_pixel_disabled', '', $this->getSlug() );
         $this->configured = $this->enabled()
                             && ! empty( $license_status ) // license was activated before
                             && count( $ads_ids ) > 0
-                            && !empty($ads_ids[0])
-                            && ! apply_filters( 'pys_pixel_disabled', false, $this->getSlug() );
+                            && $disabledPixel != 'all';
 
 		return $this->configured;
 
@@ -85,24 +84,192 @@ class GoogleAds extends Settings implements Pixel {
         }
 
 		$ids = (array) $this->getOption( 'ads_ids' );
-
-		if ( isSuperPackActive() && SuperPack()->getOption( 'enabled' ) && SuperPack()->getOption( 'additional_ids_enabled' ) ) {
-			return apply_filters("pys_google_ads_ids",$ids);
-		} else {
-			return apply_filters("pys_google_ads_ids",(array) reset( $ids )); // return first id only
-		}
-
+        if(count($ids) == 0 || empty($ids[0])) {
+            return apply_filters("pys_google_ads_ids",[]);
+        } else {
+            return apply_filters("pys_google_ads_ids",(array) reset( $ids )); // return first id only
+        }
 	}
+
+    public function getAllPixels($checkLang = true) {
+        $pixels = $this->getPixelIDs();
+
+        if( isSuperPackActive()
+            && SuperPack()->getOption( 'enabled' )
+            && SuperPack()->getOption( 'additional_ids_enabled' )
+        ) {
+            $additionalPixels = SuperPack()->getAdsAdditionalPixel();
+            foreach ($additionalPixels as $_pixel) {
+                if($_pixel->isEnable
+                    && (!$checkLang || $_pixel->isValidForCurrentLang())
+                ) {
+                    $pixels[]=$_pixel->pixel;
+                }
+
+            }
+        }
+
+        return $pixels;
+    }
+
+
+    /**
+     * @param SuperPack\SPPixelId $pixelId
+     * @return bool
+     */
+    private function isValidForCurrentLang($pixelId) {
+        if(isWPMLActive()) {
+            $current_lang_code = apply_filters( 'wpml_current_language', NULL );
+            if(is_array($pixelId->wpmlActiveLang) && !in_array($current_lang_code,$pixelId->wpmlActiveLang)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @param PYSEvent $event
+     * @return array|mixed|void
+     */
+    public function getAllPixelsForEvent($event) {
+        $pixels = $this->getPixelIDs();
+
+        if(isSuperPackActive('3.0.09')) {
+            $additionalPixels = SuperPack()->getAdsAdditionalPixel();
+            foreach ($additionalPixels as $_pixel) {
+                if($_pixel->isValidForEvent($event) && $_pixel->isConditionalValidForEvent($event)) {
+                    $pixels[]=$_pixel->pixel;
+                }
+            }
+        }
+
+        return $pixels;
+    }
 
 	public function getPixelOptions() {
 
 		return array(
-			'conversion_ids'      => $this->getPixelIDs(),
+			'conversion_ids'      => $this->getAllPixels(),
             'wooVariableAsSimple' => $this->getOption( 'woo_variable_as_simple' ),
 		);
 
 	}
-    public function addParamsToEvent(&$event) {
+
+    /**
+     * Create pixel event and fill it
+     * @param SingleEvent $event
+     * @return SingleEvent[]
+     */
+    public function generateEvents($event) {
+        $disabledPixel =  apply_filters( 'pys_pixel_disabled', false, $this->getSlug() );
+        if($disabledPixel == '1' || $disabledPixel == 'all') return [];
+
+        $pixelEvents = [];
+        $conversionLabel = []; // only for custom (send only conversion without main pixel)
+        $pixelIds = [];
+
+        if($event->getId() == 'custom_event') {
+            // ids
+            $allIds = $this->getAllPixelsForEvent($event);
+            $customEvent = $event->args;
+            $conversion_label = $customEvent->google_ads_conversion_label;
+            $conversion_id = $customEvent->google_ads_conversion_id;
+
+            if ( $conversion_id == '_all' ) {
+                if(count($allIds) > 0) {
+                    $conversion_id = $allIds[0];
+                }
+            }
+
+            if(!in_array($conversion_id,$allIds) || $conversion_id == $disabledPixel) {
+                return []; // not fire event if pixel id was disabled or deleted
+            }
+
+            // AW-12345678 => AW-12345678/da324asDvas
+            if ( ! empty( $conversion_label ) ) {
+                $conversionLabel = [$conversion_id. '/' . $conversion_label];
+            } else {
+                if($conversion_id) {
+                    $pixelIds = [$conversion_id];
+                }
+            }
+        } else {
+            // filter disabled pixels
+            $pixelIds = $this->getAllPixelsForEvent($event);
+            if(!empty($disabledPixel)) {
+                foreach ($pixelIds as $key => $value) {
+                    if($value == $disabledPixel) {
+                        array_splice($pixelIds,$key,1);
+                    }
+                }
+            }
+        }
+
+
+        if(count($pixelIds) > 0 || count($conversionLabel) > 0)  {
+            $pixelEvent = clone $event;
+            if($this->addParamsToEvent($pixelEvent)) {
+                if(count($pixelIds) > 0)
+                    $pixelEvent->addPayload([ 'conversion_ids' => $pixelIds ]);
+                if(count($conversionLabel) > 0)
+                    $pixelEvent->addPayload([ 'conversion_labels' => $conversionLabel ]);
+                $pixelEvents[] = $pixelEvent;
+            }
+        }
+
+        $listOfEddEventWithProducts = ['edd_add_to_cart_on_checkout_page','edd_purchase',];
+        $listOfWooEventWithProducts = ['woo_purchase','woo_add_to_cart_on_checkout_page','woo_add_to_cart_on_cart_page'];
+        $isWooEventWithProducts = in_array($event->getId(),$listOfWooEventWithProducts);
+        $isEddEventWithProducts = in_array($event->getId(),$listOfEddEventWithProducts);
+
+        if($isWooEventWithProducts || $isEddEventWithProducts)
+        {
+            if(isSuperPackActive('3.0.0')
+                && SuperPack()->getOption( 'enabled' )
+                && SuperPack()->getOption( 'additional_ids_enabled' ))
+            {
+                $additionalPixels = SuperPack()->getAdsAdditionalPixel();
+                foreach ($additionalPixels as $_pixel) {
+                    $filter = null;
+
+                    if(!$_pixel->isValidForEvent($event)|| $_pixel->pixel == $disabledPixel) continue;
+
+                    if($isWooEventWithProducts) {
+                        $filter = $_pixel->getWooFilter();
+                    }
+                    if($isEddEventWithProducts) {
+                        $filter = $_pixel->getEddFilter();
+                    }
+                    if($filter != null) {
+                        $products = [];
+
+                        if($isWooEventWithProducts) {
+                            $products = EventsWoo()->filterEventProductsBy($event,$filter['filter'],$filter['sub_id']);
+                        }
+                        if($isEddEventWithProducts) {
+                            $products = EventsEdd()->filterEventProductsBy($event,$filter['filter'],$filter['sub_id']);
+                        }
+                        if(count($products) > 0) {
+                            $additionalEvent = clone $event;
+                            $additionalEvent->addPayload([ 'conversion_ids' => [$_pixel->pixel] ]);
+                            $additionalEvent->args['products'] = $products;
+                            if($this->addParamsToEvent($additionalEvent)) {
+                                $pixelEvents[] = $additionalEvent;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+        return $pixelEvents;
+    }
+    /**
+     * @param SingleEvent $event
+     * @return boolean
+     */
+    private function addParamsToEvent(&$event) {
         if ( ! $this->configured() ) {
             return false;
         }
@@ -137,11 +304,7 @@ class GoogleAds extends Settings implements Pixel {
             } break;
             case 'woo_add_to_cart_on_cart_page':
             case 'woo_add_to_cart_on_checkout_page': {
-                $eventData = $this->getWooAddToCartOnCartEventParams();
-                if ($eventData) {
-                    $isActive = true;
-                    $this->addDataToEvent($eventData, $event);
-                }
+                $isActive = $this->getWooAddToCartOnCartEventParams($event);
             }break;
 
             case 'woo_view_category':{
@@ -164,13 +327,9 @@ class GoogleAds extends Settings implements Pixel {
                     $this->addDataToEvent($eventData, $event);
                 }
             }break;
-
+            case 'edd_purchase':
             case 'edd_add_to_cart_on_checkout_page':{
-                $eventData = $this->getEddCartEventParams( 'add_to_cart' );
-                if ($eventData) {
-                    $isActive = true;
-                    $this->addDataToEvent($eventData, $event);
-                }
+                $isActive = $this->setEddCartEventParams( $event );
             }break;
 
             case 'edd_view_category':{
@@ -181,16 +340,8 @@ class GoogleAds extends Settings implements Pixel {
                 }
             }break;
 
-            case 'edd_purchase':{
-                $eventData = $this->getEddCartEventParams( 'purchase' );
-                if ($eventData) {
-                    $isActive = true;
-                    $this->addDataToEvent($eventData, $event);
-                }
-            }break;
-
             case 'custom_event':{
-                $eventData =  $this->getCustomEventData( $event->args );
+                $eventData =  $this->getCustomEventData( $event );
                 if ($eventData) {
                     $isActive = true;
                     $this->addDataToEvent($eventData, $event);
@@ -235,6 +386,11 @@ class GoogleAds extends Settings implements Pixel {
             case 'edd_add_to_cart_on_button_click': {
                 if (  $this->getOption( 'edd_add_to_cart_enabled' ) && PYS()->getOption( 'edd_add_to_cart_on_button_click' ) ) {
                     $isActive = true;
+                    if($event->args != null) {
+                        $eventData =  $this->getEddAddToCartOnButtonClickEventParams( $event->args );
+                        $event->addParams($eventData['params']);
+                        $event->addPayload(['ids'=>$eventData["ids"]]);
+                    }
                     $event->addPayload(array(
                         'name'=>"add_to_cart"
                     ));
@@ -270,100 +426,28 @@ class GoogleAds extends Settings implements Pixel {
             }break;
         }
 
+
         return $isActive;
     }
 
     private function addDataToEvent($eventData,&$event) {
         $params = $eventData["data"];
         unset($eventData["data"]);
-        //unset($eventData["name"]);
+
         $event->addParams($params);
         $event->addPayload($eventData);
     }
 
 	public function getEventData( $eventType, $args = null ) {
 
-        if ( ! $this->configured() ) {
-            return false;
-        }
-
-        switch ( $eventType ) {
-
-            case 'edd_add_to_cart_on_button_click':
-                return $this->getEddAddToCartOnButtonClickEventParams( $args );
-
-            default:
-                return false;   // event does not supported
-        }
-
+        return false;
 
     }
 
     public function outputNoScriptEvents() {
 
-	    /* dont send google ads no script events to google analytics
-        if ( ! $this->configured() ) {
-            return;
-        }
+	    /* dont send google ads no script events to google analytics */
 
-        $eventsManager = PYS()->getEventsManager();
-
-        foreach ( $eventsManager->getStaticEvents( 'google_ads' ) as $eventName => $events ) {
-            foreach ( $events as $event ) {
-                foreach ( $this->getPixelIDs() as $pixelID ) {
-
-                    $args = array(
-                        'v'   => 1,
-                        'tid' => $pixelID,
-                        't'   => 'event',
-                    );
-
-                    //@see: https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#ec
-                    if ( isset( $event['params']['event_category'] ) ) {
-                        $args['ec'] = urlencode( $event['params']['event_category'] );
-                    }
-
-                    if ( isset( $event['params']['event_action'] ) ) {
-                        $args['ea'] = urlencode( $event['params']['event_action'] );
-                    }
-
-                    if ( isset( $event['params']['event_label'] ) ) {
-                        $args['el'] = urlencode( $event['params']['event_label'] );
-                    }
-
-                    if ( isset( $event['params']['value'] ) ) {
-                        $args['ev'] = urlencode( $event['params']['value'] );
-                    }
-
-                    if ( isset( $event['params']['items'] ) ) {
-
-                        foreach ( $event['params']['items'] as $key => $item ) {
-
-                            @$args["pr{$key}id" ] = urlencode( $item['id'] );
-                            @$args["pr{$key}nm"] = urlencode( $item['name'] );
-                            @$args["pr{$key}ca"] = urlencode( $item['category'] );
-                            //@$args["pr{$key}va"] = urlencode( $item['id'] ); // variant
-                            @$args["pr{$key}pr"] = urlencode( $item['price'] );
-                            @$args["pr{$key}qt"] = urlencode( $item['quantity'] );
-
-                        }
-
-                        //@todo: not tested
-                        //https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#pa
-                        $args["pa"] = 'detail'; // required
-
-                    }
-
-                    // ALT tag used to pass ADA compliance
-                    printf( '<noscript><img height="1" width="1" style="display: none;" src="%s" alt="google_analytics"></noscript>',
-                        add_query_arg( $args, 'https://www.google-analytics.com/collect' ) );
-
-                    echo "\r\n";
-
-                }
-            }
-        }
-        */
     }
 
     private function getPageViewEventParams() {
@@ -422,72 +506,43 @@ class GoogleAds extends Settings implements Pixel {
 
     }
 
-    private function getSearchEventData() {
-
-        if ( ! $this->getOption( 'search_event_enabled' ) ) {
-            return false;
-        }
-        $params = array();
-        $params['search'] = empty( $_GET['s'] ) ? null : $_GET['s'];
-
-        return array(
-            'name'  => 'view_search_results',
-            'data'  => $params,
-        );
-
-    }
-
     /**
-     * @param CustomEvent $event
+     * @param PYSEvent $event
      *
      * @return array|bool
      */
     private function getCustomEventData( $event ) {
+        /**
+         * @var CustomEvent $customEvent
+         */
+        $customEvent = $event->args;
+        $ads_action = $customEvent->getGoogleAdsAction();
 
-        $ads_action = $event->getGoogleAdsAction();
-
-        if ( ! $event->isGoogleAdsEnabled() || empty( $ads_action ) ) {
+        if ( ! $customEvent->isGoogleAdsEnabled() || empty( $ads_action ) ) {
             return false;
         }
 
         $params = array(
-            'event_category'  => $event->google_ads_event_category,
-            'event_label'     => $event->google_ads_event_label,
-            'value'           => $event->google_ads_event_value,
+            'event_category'  => $customEvent->google_ads_event_category,
+            'event_label'     => $customEvent->google_ads_event_label,
+            'value'           => $customEvent->google_ads_event_value,
         );
 
 	    // add custom params
-	    foreach ( $event->getGoogleAdsCustomParams() as $custom_param ) {
+        $customParams = $customEvent->getGoogleAdsCustomParams();
+	    foreach ( $customParams as $custom_param ) {
 		    $params[ $custom_param['name'] ] = $custom_param['value'];
 	    }
 
         // SuperPack Dynamic Params feature
         $params = apply_filters( 'pys_superpack_dynamic_params', $params, 'google_ads' );
 
-	    // ids
-	    $ids = array();
 
-	    $conversion_label = $event->google_ads_conversion_label;
-	    $conversion_id = $event->google_ads_conversion_id;
-
-	    if ( $conversion_id == '_all' ) {
-		    $ids = $this->getPixelIDs();
-	    } else {
-	    	$ids[] = $conversion_id;
-	    }
-
-	    // AW-12345678 => AW-12345678/da324asDvas
-	    if ( ! empty( $conversion_label ) ) {
-		    foreach ( $ids as $key => $value ) {
-			    $ids[ $key ] = $value . '/' . $conversion_label;
-		    }
-	    }
 
 	    return array(
 		    'name'  => $ads_action,
 		    'data'  => $params,
-		    'delay' => $event->getDelay(),
-		    'conversion_labels'   => $ids,
+		    'delay' => $customEvent->getDelay(),
 	    );
 
     }
@@ -500,7 +555,7 @@ class GoogleAds extends Settings implements Pixel {
         }
 
         $term = get_term_by( 'slug', get_query_var( 'term' ), 'product_cat' );
-        if(!is_a($term,"WP_Term"))
+        if(!is_a($term,"WP_Term") || !$term)
             return false;
         $parent_ids = get_ancestors( $term->term_id, 'product_cat', 'taxonomy' );
 
@@ -795,13 +850,19 @@ class GoogleAds extends Settings implements Pixel {
 
     }
 
-    private function getWooAddToCartOnCartEventParams() {
+    /**
+     * @param SingleEvent $event
+     * @return boolean
+     */
+    private function getWooAddToCartOnCartEventParams(&$event) {
 
         if ( ! $this->getOption( 'woo_add_to_cart_enabled' ) ) {
             return false;
         }
-
-        $params = $this->getWooCartParams("AddToCartOnCart");
+        $data = [
+            'name' => 'add_to_cart',
+        ];
+        $params = $this->getWooEventCartParams($event);
 
         if(is_home() || is_front_page()) {
             $ecomm_pagetype = "home";
@@ -816,75 +877,20 @@ class GoogleAds extends Settings implements Pixel {
         } else {
             $ecomm_pagetype = get_post_type();
         }
-        $contentId = array();
-        foreach ($params['items'] as $item){
-            $contentId[] = $item["id"];
-        }
 
-        $params['ecomm_prodid'] = $contentId;
+        $params['ecomm_prodid'] = array_column($params['items'],'id');
         $params['ecomm_pagetype'] = $ecomm_pagetype;
         $params['event_category']  = 'ecommerce';
 
-        return array(
-            'name' => 'add_to_cart',
-            'ids' => Helpers\getConversionIDs( 'woo_add_to_cart' ),
-            'data' => $params
-        );
+        $data['ids'] = Helpers\getConversionIDs( 'woo_add_to_cart' );
+        $event->addPayload($data);
+        $event->addParams($params);
 
+
+        return  true;
     }
 
-    private function getWooRemoveFromCartParams( $cart_item ) {
 
-        if ( ! $this->getOption( 'woo_remove_from_cart_enabled' ) ) {
-            return false;
-        }
-        $product_id = Helpers\getWooCartItemId( $cart_item );
-        $content_id = Helpers\getWooFullItemId( $product_id );
-
-
-
-        $_product = wc_get_product($product_id);
-        if(!$_product) return false;
-        if($_product->get_type() == "bundle") {
-            $price = getWooBundleProductCartPrice($cart_item);
-        } else {
-            $price = getWooProductPriceToDisplay( $product_id, $cart_item['quantity'] );
-        }
-
-
-
-        return array(
-            'name'=>"remove_from_cart",
-            'data' => array(
-                'event_category'  => 'ecommerce',
-                'currency'        => get_woocommerce_currency(),
-                'value' => $price,
-                'items'           => array(
-                    array(
-                        'id'       => $content_id,
-                        'google_business_vertical' => $this->googleBusinessVertical,
-                    ),
-                ),
-            ),
-        );
-
-    }
-
-    private function getWooInitiateCheckoutEventParams() {
-
-        if ( ! $this->getOption( 'woo_initiate_checkout_enabled' ) ) {
-            return false;
-        }
-
-        $params = $this->getWooCartParams( 'checkout' );
-
-        return array(
-            'name'  => 'begin_checkout',
-            'ids' => Helpers\getConversionIDs( 'woo_initiate_checkout' ),
-            'data'  => $params
-        );
-
-    }
 
     private function getWooAffiliateEventParams( $product_id,$quantity ) {
 
@@ -913,21 +919,7 @@ class GoogleAds extends Settings implements Pixel {
 
     }
 
-    private function getWooPayPalEventParams() {
 
-        if ( ! $this->getOption( 'woo_paypal_enabled' ) ) {
-            return false;
-        }
-
-        $params = $this->getWooCartParams( 'paypal' );
-        unset( $params['coupon'] );
-
-        return array(
-            'name' => getWooPayPalEventName(),
-            'data' => $params,
-        );
-
-    }
     /**
      * @param SingleEvent $event
      * @return array|false
@@ -937,10 +929,11 @@ class GoogleAds extends Settings implements Pixel {
         if ( ! $this->getOption( 'woo_purchase_enabled' ) || empty($event->args['order_id']) ) {
             return false;
         }
+        $tax = 0;
+        $withTax = 'incl' === get_option( 'woocommerce_tax_display_cart' );
+        foreach ( $event->args['products'] as $product_data ) {
 
-        foreach ( $event->args['products'] as $products_data ) {
-
-            $product_id = Helpers\getWooProductDataId( $products_data );
+            $product_id = Helpers\getWooProductDataId( $product_data );
             $content_id = Helpers\getWooFullItemId( $product_id );
 
             $item = array(
@@ -949,22 +942,26 @@ class GoogleAds extends Settings implements Pixel {
             );
 
             $items[] = $item;
+            $tax += (float) $product_data['total_tax'];
         }
 
         if(empty($items)) return false; // order is empty
 
+        $total = getWooEventOrderTotal($event);
+
+        $tax += (float) $event->args['shipping_tax'];
 
         $params = array(
             'ecomm_prodid'      => array_column($items,'id'),
             'ecomm_pagetype'    => "purchase confirmation",
-            'ecomm_totalvalue'  => $event->args['total'],
+            'ecomm_totalvalue'  => $total,
             'event_category'    => 'ecommerce',
             'transaction_id'    => $event->args['order_id'],
-            'value'             => $event->args['total'],
+            'value'             => $total,
             'currency'          => $event->args['currency'],
             'items'             => $items,
-            'tax'               => $event->args['tax'],
-            'shipping'          => $event->args['shipping_cost'],
+            'tax'               => pys_round($tax),
+            'shipping'          => $event->args['shipping'],
             'coupon'            => $event->args['coupon_name'],
         );
 
@@ -977,42 +974,40 @@ class GoogleAds extends Settings implements Pixel {
         return true;
     }
 
-    private function getWooAdvancedMarketingEventParams( $eventType ) {
+    /**
+     * @param SingleEvent $event
+     * @return array
+     */
+    private function getWooEventCartParams( $event ) {
+        $items = [];
 
-        if ( ! $this->getOption( $eventType . '_enabled' ) ) {
-            return false;
+
+        foreach ($event->args['products'] as $product) {
+            $product_id = Helpers\getWooEventCartItemId( $product );
+
+            if(!$product_id) continue;
+
+            $content_id = Helpers\getWooFullItemId( $product_id );
+            $item = array(
+                'id'       => $content_id,
+                'google_business_vertical' => $this->googleBusinessVertical,
+            );
+            $items[] = $item;
+
         }
-
-        $customer_params = PYS()->getEventsManager()->getWooCustomerTotals();
         $params = array(
-            "plugin" => "PixelYourSite"
+            'event_category' => 'ecommerce',
+            'value' => getWooEventCartTotal($event),
+            'items' => $items,
+            'coupon' => $event->args['coupon']
         );
-
-
-        switch ( $eventType ) {
-            case 'woo_frequent_shopper':
-                $eventName = 'FrequentShopper';
-                $params['transactions_count'] = $customer_params['orders_count'];
-                break;
-
-            case 'woo_vip_client':
-                $eventName = 'VipClient';
-                $params['average_order'] = $customer_params['avg_order_value'];
-                $params['transactions_count'] = $customer_params['orders_count'];
-                break;
-
-            default:
-                $params['predicted_ltv'] = $customer_params['ltv'];
-                $eventName = 'BigWhale';
-        }
-
-        return array(
-            'name'  => $eventName,
-            'data'  => $params,
-        );
-
+        return $params;
     }
-
+    /**
+     * @deprecated
+     * @param string $context
+     * @return array
+     */
     private function getWooCartParams( $context = 'cart' ) {
 
         $items = array();
@@ -1051,82 +1046,6 @@ class GoogleAds extends Settings implements Pixel {
 
     }
 
-    private function getWooOrderParams() {
-
-        if ( ! empty( $this->wooOrderParams ) ) {
-            return $this->wooOrderParams;
-        }
-        $order_id = wooGetOrderIdFromRequest();
-
-        $order = new \WC_Order( $order_id );
-        $items = array();
-
-        foreach ( $order->get_items( 'line_item' ) as $line_item ) {
-
-            $product_id = Helpers\getWooCartItemId( $line_item );
-            $content_id = Helpers\getWooFullItemId( $product_id );
-
-            $post = get_post( $product_id );
-
-            if ( $line_item['variation_id'] ) {
-                $variation = wc_get_product( (int) $line_item['variation_id'] );
-                if(is_a($variation, 'WC_Product_Variation')) {
-                    $name = $variation->get_title();
-                    $category = implode( '/', getObjectTerms( 'product_cat', $variation->get_parent_id() ) );
-                    $variation_name = implode("/", $variation->get_variation_attributes());
-                } else {
-                    $name = $post->post_title;
-                    $variation_name = null;
-                    $category = implode( '/', getObjectTerms( 'product_cat', $product_id ) );
-                }
-
-            } else {
-                $name = $post->post_title;
-                $variation_name = null;
-                $category = implode( '/', getObjectTerms( 'product_cat', $product_id ) );
-            }
-
-            $item = array(
-                'id'       => $content_id,
-                'name'     => $name,
-                'category' => $category,
-                'quantity' => $line_item['qty'],
-                'price'    => getWooProductPriceToDisplay( $product_id ),
-                'variant'  => $variation_name,
-            );
-
-            $items[] = $item;
-
-        }
-
-        // calculate value
-        if ( PYS()->getOption( 'woo_event_value' ) == 'custom' ) {
-            $value = getWooOrderTotal( $order );
-        } else {
-            $value = $order->get_total();
-        }
-
-        if ( isWooCommerceVersionGte( '2.7' ) ) {
-            $tax = (float) $order->get_total_tax( 'edit' );
-            $shipping = (float) $order->get_shipping_total( 'edit' );
-        } else {
-            $tax = $order->get_total_tax();
-            $shipping = $order->get_total_shipping();
-        }
-
-        $this->wooOrderParams = array(
-            'event_category' => 'ecommerce',
-            'transaction_id' => $order_id,
-            'value'          => $value,
-            'currency'       => get_woocommerce_currency(),
-            'items'          => $items,
-            'tax'            => $tax,
-            'shipping'       => $shipping
-        );
-
-        return $this->wooOrderParams;
-
-    }
 
     private function getEddViewContentEventParams() {
         global $post;
@@ -1161,9 +1080,6 @@ class GoogleAds extends Settings implements Pixel {
 
     private function getEddAddToCartOnButtonClickEventParams( $download_id ) {
 
-        if ( ! $this->getOption( 'edd_add_to_cart_enabled' ) || ! PYS()->getOption( 'edd_add_to_cart_on_button_click' ) ) {
-            return false;
-        }
 
         // maybe extract download price id
         if ( strpos( $download_id, '_') !== false ) {
@@ -1202,172 +1118,84 @@ class GoogleAds extends Settings implements Pixel {
 
     }
 
-    private function getEddCartEventParams( $context = 'add_to_cart' ) {
-
-        if ( $context == 'add_to_cart' && ! $this->getOption( 'edd_add_to_cart_enabled' ) ) {
-            return false;
-        } elseif ( $context == 'begin_checkout' && ! $this->getOption( 'edd_initiate_checkout_enabled' ) ) {
-            return false;
-        } elseif ( $context == 'purchase' && ! $this->getOption( 'edd_purchase_enabled' ) ) {
-            return false;
-        } else {
-            // AM events allowance checked by themselves
-        }
-
-        if ( $context == 'add_to_cart' || $context == 'begin_checkout' ) {
-            $cart = edd_get_cart_contents();
-        } else {
-            $cart = edd_get_payment_meta_cart_details( edd_get_purchase_id_by_key( getEddPaymentKey() ), true );
+    /**
+     * @param SingleEvent $event
+     * @return bool
+     */
+    private function setEddCartEventParams(&$event) {
+        $params = [
+            'ecomm_pagetype'=> "purchase confirmation",
+            'event_category' => 'ecommerce',
+        ];
+        $data = [];
+        switch ($event->getId()) {
+            case 'edd_add_to_cart_on_checkout_page' : {
+                if(! $this->getOption( 'edd_add_to_cart_enabled' )) return false;
+                $data['name'] = 'add_to_cart';
+                $data['ids'] = Helpers\getConversionIDs( 'edd_add_to_cart' );
+            }break;
+            case 'edd_purchase' : {
+                if(! $this->getOption( 'edd_purchase_enabled' )) return false;
+                $data['name'] = 'purchase';
+                $params['coupon'] = $event->args['coupon'];
+                $params['transaction_id'] = $event->args['order_id'];
+                $params['currency'] = edd_get_currency();
+                $data['ids'] = Helpers\getConversionIDs( 'edd_purchase' );
+            }break;
         }
 
         $items = array();
-        $total_value = 0;
+        $total = 0;
+        $total_as_is = 0;
+        $tax = 0;
+        $include_tax = PYS()->getOption( 'edd_tax_option' ) == 'included';
 
-        foreach ( $cart as $cart_item_key => $cart_item ) {
+        foreach ( $event->args['products'] as  $product ) {
+            $download_id   = (int) $product['product_id'];
 
-            $download_id   = (int) $cart_item['id'];
+            if ( $event->getId() == 'edd_purchase' ) {
 
-            if ( in_array( $context, array( 'purchase', 'FrequentShopper', 'VipClient', 'BigWhale' ) ) ) {
-                $item_options = $cart_item['item_number']['options'];
-            } else {
-                $item_options = $cart_item['options'];
-            }
-
-            if ( ! empty( $item_options ) && $item_options['price_id'] !== 0 ) {
-                $price_index = $item_options['price_id'];
-            } else {
-                $price_index = null;
-            }
-
-            /**
-             * Price as is used for all events except Purchase to avoid wrong values in Product Performance report.
-             */
-            if ( $context == 'purchase' ) {
-
-                $include_tax = PYS()->getOption( 'edd_tax_option' ) == 'included' ? true : false;
-
-                $price = $cart_item['item_price'] - $cart_item['discount'];
-
-                if ( $include_tax == false && edd_prices_include_tax() ) {
-                    $price -= $cart_item['tax'];
-                } elseif ( $include_tax == true && edd_prices_include_tax() == false ) {
-                    $price += $cart_item['tax'];
+                if ( $include_tax ) {
+                    $total += $product['subtotal'] + $product['tax'] - $product['discount'];
+                } else {
+                    $total += $product['subtotal'] - $product['discount'];
                 }
-
+                $tax += $product['tax'];
+                $total_as_is += $product['price'];
             } else {
-                $price = getEddDownloadPriceToDisplay( $download_id, $price_index );
+                $total += getEddDownloadPriceToDisplay( $download_id,$product['price_index'] );
+                $total_as_is += edd_get_cart_item_final_price( $product['cart_item_key']  );
             }
 
-            $item = array(
-                'id'       => Helpers\getEddDownloadContentId($download_id),
-                'google_business_vertical' => $this->googleBusinessVertical,
+            $items[] = [
+                    'id'       => Helpers\getEddDownloadContentId($download_id),
+                    'google_business_vertical' => $this->googleBusinessVertical,
 //				'variant'  => $variation_name,
-            );
-
-            $items[] = $item;
-            $total_value += $price;
-
+            ];
         }
-        $params = array(
-            'ecomm_pagetype'=> "purchase confirmation",
-            'event_category' => 'ecommerce',
-            'value' => $total_value,
-            'items' => $items,
-        );
+        $params['value'] =  $total;
+        $params['items'] =  $items;
 
-
-
-
-
-        if ( $context == 'purchase' ) {
-
-            $payment_key = getEddPaymentKey();
-            $payment_id = (int) edd_get_purchase_id_by_key( $payment_key );
-            $user = edd_get_payment_meta_user_info( $payment_id );
-
-            // coupons
-            $coupons = isset( $user['discount'] ) && $user['discount'] != 'none' ? $user['discount'] : null;
-
-            if ( ! empty( $coupons ) ) {
-                $coupons = explode( ', ', $coupons );
-                $params['coupon'] = $coupons[0];
-            }
-
-            $params['transaction_id'] = $payment_id;
-            $params['currency'] = edd_get_currency();
+        if ( $event->getId() == 'edd_purchase' ) {
 
             // calculate value
-            if ( PYS()->getOption( 'edd_event_value' ) == 'custom' ) {
-                $params['value'] = getEddOrderTotal( $payment_id );
+            if( PYS()->getOption( 'edd_event_value' ) == 'custom' ) {
+                $params['value']  = $total;
             } else {
-                $params['value'] = edd_get_payment_amount( $payment_id );
+                $params['value']  = $total_as_is;
             }
 
-            if ( edd_use_taxes() ) {
-                $params['tax'] = edd_get_payment_tax( $payment_id );
-            } else {
-                $params['tax'] = 0;
-            }
-
-            $ids = array();
-            foreach ($items as $i) {
-                $ids[] = $i['id'];
-            }
-            $params['ecomm_prodid'] = $ids;
-            $params['ecomm_totalvalue'] = $total_value;
-
-        }
-        $ids = array();
-        switch ($context) {
-            case 'add_to_cart':
-                $ids = Helpers\getConversionIDs( 'edd_add_to_cart' );
-                break;
-
-            case 'begin_checkout':
-                $ids = Helpers\getConversionIDs( 'edd_initiate_checkout' );
-                break;
-
-            case 'purchase':
-                $ids = Helpers\getConversionIDs( 'edd_purchase' );
-                break;
+            $params['tax'] = $tax;
+            $params['ecomm_prodid'] = array_column($items,'id');
+            $params['ecomm_totalvalue'] = $total;
         }
 
-        return array(
-            'name' => $context,
-            'ids' => $ids,
-            'data' => $params,
-        );
+        $event->addParams($params);
+        $event->addPayload($data);
 
+        return true;
     }
 
-    private function getEddRemoveFromCartParams( $cart_item ) {
-
-        if ( ! $this->getOption( 'edd_remove_from_cart_enabled' ) ) {
-            return false;
-        }
-
-        $download_id = $cart_item['id'];
-
-        $price_index = ! empty( $cart_item['options'] ) ? $cart_item['options']['price_id'] : null;
-        $price = getEddDownloadPriceToDisplay( $download_id, $price_index );
-
-        return array(
-            'name'=>'remove_from_cart',
-            'data' => array(
-                'event_category'  => 'ecommerce',
-                'currency'        => edd_get_currency(),
-                'value' => $price,
-                'items'           => array(
-                    array(
-                        'id'       => Helpers\getEddDownloadContentId($download_id),
-                        'google_business_vertical' => $this->googleBusinessVertical,
-//						'variant'  => $variation_name,
-                    ),
-                ),
-            ),
-        );
-
-    }
 
     private function getEddViewCategoryEventParams() {
         global $posts;
@@ -1377,6 +1205,7 @@ class GoogleAds extends Settings implements Pixel {
         }
 
         $term = get_term_by( 'slug', get_query_var( 'term' ), 'download_category' );
+        if(!$term) return false;
         $parent_ids = get_ancestors( $term->term_id, 'download_category', 'taxonomy' );
 
         $download_categories = array();
@@ -1415,34 +1244,6 @@ class GoogleAds extends Settings implements Pixel {
             'name'  => 'view_item_list',
             'ids' => Helpers\getConversionIDs( 'edd_view_category' ),
             'data'  => $params,
-        );
-
-    }
-
-    private function getEddAdvancedMarketingEventParams( $eventType ) {
-
-        if ( ! $this->getOption( $eventType . '_enabled' ) ) {
-            return false;
-        }
-
-        switch ( $eventType ) {
-            case 'edd_frequent_shopper':
-                $eventName = 'FrequentShopper';
-                break;
-
-            case 'edd_vip_client':
-                $eventName = 'VipClient';
-                break;
-
-            default:
-                $eventName = 'BigWhale';
-        }
-
-        $params = $this->getEddCartEventParams( $eventName );
-
-        return array(
-            'name' => $eventName,
-            'data' => $params['data'],
         );
 
     }

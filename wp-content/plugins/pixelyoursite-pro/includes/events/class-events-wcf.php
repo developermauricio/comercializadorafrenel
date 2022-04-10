@@ -41,9 +41,14 @@ class EventsWcf extends EventsFactory {
         return count($this->events);
     }
 
+    public static function getSlug()
+    {
+        return "wcf";
+    }
+
     function isEnabled()
     {
-        return PYS()->getOption('wcf_enabled') && isWcfActive();
+        return PYS()->getOption('wcf_enabled') && isWcfActive() && isWooCommerceActive();
     }
 
     function getOptions()
@@ -110,7 +115,7 @@ class EventsWcf extends EventsFactory {
         switch ($event_id) {
 
             case 'wcf_view_content': {
-                $events = [];
+
                 global $post;
                 if(isWcfLanding()) {
                     $wcfProducts = getWcfFlowCheckoutProducts();
@@ -119,31 +124,25 @@ class EventsWcf extends EventsFactory {
                         getWcfOfferProduct($post->ID)
                     ];
                 }
+                $event = new SingleEvent($event_id,EventTypes::$STATIC,self::getSlug());
+                $event->args = $this->getViewContentArgs($wcfProducts);
 
-                foreach ($wcfProducts as $product) {
-                    if(!$product) continue;
-
-                    $event = new SingleEvent($event_id,EventTypes::$STATIC);
-                    $event->args = $this->getViewContentArgs($product);
-
-                    $events[] = $event;
-                }
-                return $events;
+                return $event;
             }
             case 'wcf_add_to_cart_on_next_step_click': {
-                $event = new SingleEvent($event_id,EventTypes::$DYNAMIC);
+                $event = new SingleEvent($event_id,EventTypes::$DYNAMIC,self::getSlug());
                 $event->args = $this->getWooAddToCartArgs();
                 return $event;
             }
             case 'wcf_remove_from_cart_on_bump_click':
             case 'wcf_add_to_cart_on_bump_click': {
-                $event = new SingleEvent($event_id,EventTypes::$DYNAMIC);
+                $event = new SingleEvent($event_id,EventTypes::$DYNAMIC,self::getSlug());
                 $event->args = $this->getBumpArgs();
                 return $event;
             }
 
             case 'wcf_bump': {
-                $event = new SingleEvent($event_id,EventTypes::$DYNAMIC);
+                $event = new SingleEvent($event_id,EventTypes::$DYNAMIC,self::getSlug());
                 $step = getWcfCurrentStep();
                 $event->addParams([
                     'flow' => getWcfFlowTitle(),
@@ -156,7 +155,7 @@ class EventsWcf extends EventsFactory {
             }
 
             case 'wcf_page': {
-                $event = new SingleEvent($event_id,EventTypes::$STATIC);
+                $event = new SingleEvent($event_id,EventTypes::$STATIC,self::getSlug());
                 $step = getWcfCurrentStep();
                 $event->addParams([
                     'flow' => getWcfFlowTitle(),
@@ -168,7 +167,7 @@ class EventsWcf extends EventsFactory {
                 return $event;
             }
             case 'wcf_step_page': {
-                $event = new SingleEvent($event_id,EventTypes::$STATIC);
+                $event = new SingleEvent($event_id,EventTypes::$STATIC,self::getSlug());
                 $step = getWcfCurrentStep();
                 $event->addParams([
                     'flow' => getWcfFlowTitle(),
@@ -183,7 +182,7 @@ class EventsWcf extends EventsFactory {
                 $order = wc_get_order($order_id);
                 if(!$order || $order->get_meta('pys_order_type',true) != "wcf-optin" ) return null;
 
-                $event = new SingleEvent($event_id,EventTypes::$STATIC);
+                $event = new SingleEvent($event_id,EventTypes::$STATIC,self::getSlug());
                 $event->addParams([
 
                 ]);
@@ -197,15 +196,16 @@ class EventsWcf extends EventsFactory {
         }
     }
 
-    private function getViewContentArgs($wcf_product) {
+    private function getViewContentArgs($wcf_products) {
         $args = [
             'products'=>[],
             'currency' => get_woocommerce_currency()
         ];
-        $product = wc_get_product($wcf_product['product']);
-        if(!$product) return null;
-
-        $args['products'][] = pys_woo_get_product_data($product,$wcf_product);
+        foreach ($wcf_products as $wcf_product) {
+            $product = wc_get_product($wcf_product['product']);
+            if(!$product) continue;
+            $args['products'][] = pys_woo_get_product_data($product,$wcf_product);
+        }
 
         return $args;
     }

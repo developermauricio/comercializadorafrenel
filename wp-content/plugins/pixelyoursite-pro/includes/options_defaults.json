@@ -6,6 +6,7 @@
   "google_retargeting_logic": "ecomm",
 
   "gdpr_facebook_prior_consent_enabled": true,
+  "gdpr_tiktok_prior_consent_enabled": true,
   "gdpr_analytics_prior_consent_enabled": true,
   "gdpr_google_ads_prior_consent_enabled": true,
   "gdpr_pinterest_prior_consent_enabled": true,
@@ -217,5 +218,6 @@
   "wcf_global_cartflows_flow_parameter_enabled": true,
   "wcf_global_cartflows_step_parameter_enabled": true,
   "wcf_bump_event_enabled": true,
-  "wcf_purchase_on": "all"
+  "wcf_purchase_on": "all",
+  "logs_enable": false
 }

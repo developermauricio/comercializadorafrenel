@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
         </div>
 
-        <?php if(Ga()->isUse4Version()) : ?>
+
             <div class="row">
                 <div class="col">
                     <?php GA()->render_switcher_input( 'disable_advertising_features' ); ?>
@@ -45,7 +45,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 </div>
             </div>
 
-        <?php endif; ?>
+
 
         <div class="row">
             <div class="col">

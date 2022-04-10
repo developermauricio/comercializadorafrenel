@@ -341,7 +341,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 <div class="card card-static" id="pys-section-ga-id">
     <div class="card-header">
         Pinterest Tag ID setting
-        <a class="pys_external_link" href="https://www.pixelyoursite.com/pinterest-tag?utm_source=pys-free-plugin&utm_medium=pinterest-badge&utm_campaign=requiere-free-add-on" target="_blank">Requires free add-on <i class="fa fa-external-link"></i></a>
+        <a class="pys_external_link" href="https://www.pixelyoursite.com/pinterest-tag?utm_source=pys-free-plugin&utm_medium=pinterest-badge&utm_campaign=requiere-free-add-on" target="_blank">Requires paid add-on <i class="fa fa-external-link"></i></a>
     </div>
 </div>
 <?php endif; ?>
@@ -454,26 +454,26 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
             </div>
         </div>
 
-      <?php if ( Facebook()->enabled() ) : ?>
-      <div class="row mb-1">
-        <div class="col">
-            <?php Facebook()->render_switcher_input( 'woo_purchase_enabled' ); ?>
-            <h4 class="switcher-label">Enable the Purchase event on Facebook (required for DPA)</h4>
-        </div>
-    </div>
-<?php endif; ?>
+        <?php if ( Facebook()->enabled() ) : ?>
+            <div class="row mb-1">
+                <div class="col">
+                    <?php Facebook()->render_switcher_input( 'woo_purchase_enabled' ); ?>
+                    <h4 class="switcher-label">Enable the Purchase event on Facebook (required for DPA)</h4>
+                </div>
+            </div>
+        <?php endif; ?>
 
-<?php if ( Pinterest()->enabled() ) : ?>
-<div class="row">
-    <div class="col">
-        <?php Pinterest()->render_switcher_input( 'woo_purchase_enabled' ); ?>
-        <h4 class="switcher-label">Enable the Checkout event on Pinterest</h4>
-        <?php Pinterest()->renderAddonNotice(); ?>
-    </div>
-</div>
-<?php endif; ?>
+        <?php if ( Pinterest()->enabled() ) : ?>
+            <div class="row">
+                <div class="col">
+                    <?php Pinterest()->render_switcher_input( 'woo_purchase_enabled' ); ?>
+                    <h4 class="switcher-label">Enable the Checkout event on Pinterest</h4>
+                    <?php Pinterest()->renderAddonNotice(); ?>
+                </div>
+            </div>
+        <?php endif; ?>
 
-<div class="row mt-3">
+    <div class="row mt-3">
     <div class="col-11 col-offset-left">
         <label class="label-inline">Facebook and Pinterest value parameter settings:</label>
     </div>
@@ -481,7 +481,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
       <?php renderPopoverButton( 'woo_purchase_event_value' ); ?>
   </div>
 </div>
-<div class="row">
+    <div class="row">
     <div class="col col-offset-left">
         <div>
             <div class="collapse-inner">
@@ -511,7 +511,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 </div>
 </div>
 
-<?php if ( GA()->enabled() ) : ?>
+    <?php if ( GA()->enabled() ) : ?>
 <div class="row mb-1">
     <div class="col">
         <?php GA()->render_switcher_input( 'woo_purchase_enabled' ); ?>
@@ -526,7 +526,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 </div>
 <?php endif; ?>
 
-<?php if ( Ads()->enabled() ) : ?>
+    <?php if ( Ads()->enabled() ) : ?>
 <div class="row">
     <div class="col">
         <?php Ads()->render_switcher_input( 'woo_purchase_enabled' ); ?>
@@ -536,7 +536,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 <?php AdsHelpers\renderConversionLabelInputs( 'woo_purchase' ); ?>
 <?php endif; ?>
 
-<?php if ( Bing()->enabled() ) : ?>
+    <?php if ( Bing()->enabled() ) : ?>
 <div class="row">
     <div class="col-11">
         <?php Bing()->render_switcher_input( 'woo_purchase_enabled' ); ?>
@@ -548,6 +548,22 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
     </div>
 </div>
 <?php endif; ?>
+
+    <?php if ( Tiktok()->enabled() ) : ?>
+        <div class="row">
+            <div class="col-11">
+                <?php Tiktok()->render_switcher_input( 'woo_purchase_enabled' ); ?>
+                <h4 class="switcher-label">Enable the PlaceAnOrder event on TikTok</h4>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-11">
+                <?php Tiktok()->render_switcher_input( 'woo_compete_payment_enabled' ); ?>
+                <h4 class="switcher-label">Enable the CompletePayment event on TikTok</h4>
+            </div>
+        </div>
+    <?php endif; ?>
 
 <div class="row mt-3">
     <div class="col">
@@ -632,6 +648,15 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
                     <?php Bing()->render_switcher_input( 'woo_initiate_checkout_enabled' ); ?>
                     <h4 class="switcher-label">Enable the InitiateCheckout on Bing</h4>
                     <?php Bing()->renderAddonNotice(); ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ( Tiktok()->enabled() ) : ?>
+            <div class="row">
+                <div class="col">
+                    <?php Tiktok()->render_switcher_input( 'woo_initiate_checkout_enabled' ); ?>
+                    <h4 class="switcher-label">Enable the InitiateCheckout on TikTok</h4>
                 </div>
             </div>
         <?php endif; ?>
@@ -733,6 +758,15 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
                     <?php Bing()->render_switcher_input( 'woo_add_to_cart_enabled' ); ?>
                     <h4 class="switcher-label">Enable the AddToCart event on Bing</h4>
                     <?php Bing()->renderAddonNotice(); ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ( Tiktok()->enabled() ) : ?>
+            <div class="row">
+                <div class="col">
+                    <?php Tiktok()->render_switcher_input( 'woo_add_to_cart_enabled' ); ?>
+                    <h4 class="switcher-label">Enable the AddToCart event on TikTok</h4>
                 </div>
             </div>
         <?php endif; ?>
@@ -839,6 +873,15 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
                     <?php Bing()->render_switcher_input( 'woo_view_content_enabled' ); ?>
                     <h4 class="switcher-label">Enable the PageVisit event on Bing</h4>
                     <?php Bing()->renderAddonNotice(); ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ( Tiktok()->enabled() ) : ?>
+            <div class="row">
+                <div class="col">
+                    <?php Tiktok()->render_switcher_input( 'woo_view_content_enabled' ); ?>
+                    <h4 class="switcher-label">Enable the PageVisit event on TikTok</h4>
                 </div>
             </div>
         <?php endif; ?>

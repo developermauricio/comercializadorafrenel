@@ -132,68 +132,47 @@ class EventsEdd extends EventsFactory {
         return false;
     }
 
-    function getEvent($event)
+    function getEvent($eventId)
     {
-        switch ($event) {
-            case 'edd_add_to_cart_on_checkout_page' :
-            case 'edd_view_category': //@todo: +7.1.0+  maybe fire on Shop page as well? review GA 'list' param then
-            case 'edd_view_content':
-            case 'edd_vip_client':
-            case 'edd_big_whale':
-            case 'edd_frequent_shopper': {
-                return new SingleEvent($event,EventTypes::$STATIC);
+        switch ($eventId) {
+
+            case 'edd_view_category': {
+                $event = new SingleEvent($eventId, EventTypes::$STATIC, self::getSlug());
+                return $event;
             }
+            case 'edd_view_content': {
+                global  $post;
+                $event = new SingleEvent($eventId, EventTypes::$STATIC, self::getSlug());
+                $event->args = ['products' => [$this->getEddProductParams($post->ID)]] ;
+                return $event;
+        }
+
             case 'edd_remove_from_cart': {
-                return new GroupedEvent($event,EventTypes::$DYNAMIC);
+                return $this->getRemoveFromCartEvents($eventId);
             }
             case 'edd_add_to_cart_on_button_click': {
 
-                return new SingleEvent($event,EventTypes::$DYNAMIC);
+                return new SingleEvent($eventId,EventTypes::$DYNAMIC,self::getSlug());
             }
-
+            case 'edd_add_to_cart_on_checkout_page':
             case 'edd_initiate_checkout': {
-                $events = array();
-                $events[] = new SingleEvent($event,EventTypes::$STATIC);
-                if(Facebook()->enabled()) {
-                    $categoryPixels = (array)Facebook()->getEddCategoryPixelIDs();
-                    if(count($categoryPixels) > 0) {
-                        $catIds = $this->getEddCartActiveCategories($categoryPixels);
-                        if(count($catIds) > 0) {
-                            $groupEvent = new GroupedEvent('edd_initiate_checkout_category',EventTypes::$STATIC);
-                            foreach ($catIds as $key){
-                                $groupEvent->addEvent(new SingleEvent($key,EventTypes::$STATIC));
-                            }
-                            $events[] = $groupEvent;
-                        }
-                    }
-                }
-
-                return $events;
+                $event = new SingleEvent($eventId,EventTypes::$STATIC,self::getSlug());
+                $event->args = ['products' => $this->getEddCartProducts()] ;
+                return $event;
             }
-            case 'edd_purchase': {
-                $events = array();
+            case 'edd_vip_client':
+            case 'edd_big_whale':
+            case 'edd_frequent_shopper': {
                 $payment_key = getEddPaymentKey();
                 $order_id = (int) edd_get_purchase_id_by_key( $payment_key );
+                if(!$order_id) return null;
 
-                $event = new SingleEvent($event,EventTypes::$STATIC);
-                $event->addPayload(['edd_order'=>$order_id]);
-                $events[] = $event;
-                if(Facebook()->enabled()) {
-                    $categoryPixels = (array)Facebook()->getEddCategoryPixelIDs();
-                    if(count($categoryPixels) > 0) {
-                        $catIds = $this->getEddCartActiveCategories($categoryPixels);
-                        if(count($catIds) > 0) {
-                            $groupEvent = new GroupedEvent('edd_purchase_category',EventTypes::$STATIC);
-                            foreach ($catIds as $key){
-                                $child = new SingleEvent($key,EventTypes::$STATIC);
-                                $child->addPayload(['edd_order'=>$order_id]);
-                                $groupEvent->addEvent($child);
-                            }
-                            $events[] = $groupEvent;
-                        }
-                    }
-                }
-                return $events;
+                $event = new SingleEvent($eventId,EventTypes::$STATIC,self::getSlug());
+                $event->args = ['products' => $this->getEddCheckOutProducts($order_id)] ;
+                return $event;
+            }
+            case 'edd_purchase': {
+                return $this->getPurchaseEvent($eventId);
             }
         }
     }
@@ -235,19 +214,16 @@ class EventsEdd extends EventsFactory {
         return false;
     }
 
-    private function getEddCartActiveCategories($categoryPixels){
-        $catIds = array();
-        $keys = array_keys($categoryPixels);
-        $cart = edd_get_cart_contents();
-        foreach ( $cart as $cart_item_key => $cart_item ) {
-            $download_id   = (int) $cart_item['id'];
-            $productCatIds = Facebook\HelpersCategory\getIntersectEddProduct($download_id,$keys);
-            foreach ($productCatIds as $id) {
-                if(!in_array($categoryPixels[$id],$catIds)) // disable duplicate pixel_id
-                    $catIds[]=$id;
-            }
+    private function getRemoveFromCartEvents($eventId) {
+        $events = [];
+
+
+        foreach (edd_get_cart_contents() as $cart_item_key => $cart_item) {
+            $event = new SingleEvent($eventId,EventTypes::$DYNAMIC,self::getSlug());
+            $event->args = ['key'=>$cart_item_key,'item'=>$cart_item];
+            $events[]=$event;
         }
-        return array_unique($catIds);
+        return $events;
     }
 
     public function getEddCustomerTotals() {
@@ -283,6 +259,139 @@ class EventsEdd extends EventsFactory {
             return true;
         }
         return false;
+    }
+
+    function getEddProductParams($productId, $quantity = 1) {
+        $post = get_post(  $productId );
+        $tags = getObjectTerms( 'download_tag', $productId );
+        $categories = getObjectTermsWithId( 'download_category', $productId );
+        $data = [
+            'product_id'    => $productId,
+            'name'          => $post->post_title,
+            'tags'          => $tags,
+            'categories'    => $categories,
+            'quantity'      => $quantity,
+            'price_index'   => null
+        ];
+
+        return $data;
+    }
+
+    function getEddCartProducts() {
+        $products = [];
+        foreach (edd_get_cart_contents() as $cart_item_key => $cart_item) {
+            $productId = (int) $cart_item['id'];
+            $post = get_post(  $productId );
+            $tags = getObjectTerms( 'download_tag', $productId );
+            $categories = getObjectTermsWithId( 'download_category', $productId );
+
+            if ( ! empty( $cart_item['options'] ) && $cart_item['options']['price_id'] !== 0 ) {
+                $price_index = $cart_item['options']['price_id'];
+            } else {
+                $price_index = null;
+            }
+
+            $products[] = [
+                'cart_item_key' => $cart_item_key,
+                'product_id'    => $productId,
+                'name'          => $post->post_title,
+                'tags'          => $tags,
+                'categories'    => $categories,
+                'quantity'      => $cart_item['quantity'],
+                'price_index'   => $price_index
+            ];
+        }
+        return $products;
+    }
+
+    function getPurchaseEvent($eventId) {
+
+        $payment_key = getEddPaymentKey();
+        $order_id = (int) edd_get_purchase_id_by_key( $payment_key );
+        if(!$order_id) return null;
+
+        $event = new SingleEvent($eventId,EventTypes::$STATIC,self::getSlug());
+        $event->addPayload(['edd_order'=>$order_id]);
+        $args = [
+            'products' => $this->getEddCheckOutProducts($order_id),
+            'order_id'=>$order_id,
+        ];
+
+        $user = edd_get_payment_meta_user_info( $order_id );
+        // coupons
+        $coupons = isset( $user['discount'] ) && $user['discount'] != 'none' ? $user['discount'] : null;
+
+        if ( ! empty( $coupons ) ) {
+            $coupons = explode( ', ', $coupons );
+            $args['coupon'] = $coupons[0];
+        } else {
+            $args['coupon'] = '';
+        }
+
+        $event->args = $args;
+
+        return $event;
+    }
+
+    function getEddCheckOutProducts($orderId) {
+        $products = [];
+        $cart = edd_get_payment_meta_cart_details($orderId, true );
+        foreach ($cart as $cart_item_key => $cart_item) {
+            $productId = (int) $cart_item['id'];
+            $post = get_post(  $productId );
+            $tags = getObjectTerms( 'download_tag', $productId );
+            $categories = getObjectTermsWithId( 'download_category', $productId );
+
+            $options = $cart_item['item_number']['options'];
+            if ( ! empty( $options ) && $options !== 0 ) {
+                $price_index = $options['price_id'];
+            } else {
+                $price_index = null;
+            }
+
+            $products[] = [
+                'cart_item_key' => $cart_item_key,
+                'product_id' => $productId,
+                'name'  => $post->post_title,
+                'tags'          => $tags,
+                'categories'    => $categories,
+                'quantity'  => $cart_item['quantity'],
+                'subtotal'  =>  $cart_item['subtotal'],
+                'tax'  => $cart_item['tax'] ,
+                'discount'  => $cart_item['discount'],
+                'price'  => $cart_item['price'],
+                'price_index'=>$price_index
+            ];
+        }
+        return $products;
+    }
+
+    /**
+     * @param SingleEvent $event
+     * @param $filter
+     */
+    static function filterEventProductsBy($event,$filter,$filterId) {
+        $products = [];
+
+        foreach ($event->args['products'] as $productData) {
+            if($filter == 'in_download_category') {
+                $ids = array_column($productData['categories'],'id');
+
+                if(in_array($filterId,$ids)) {
+                    $products[]=$productData;
+                }
+            } elseif ($filter == 'in_download_tag') {
+                if(isset($productData['tags'][$filterId])) {
+                    $products[]=$productData;
+                }
+            } else  {
+                if( $productData['product_id'] == $filterId) {
+                    $products[]=$productData;
+                }
+            }
+
+        }
+        return $products;
     }
 }
 

@@ -203,7 +203,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
     <div class="card card-static" id="pys-section-ga-id">
         <div class="card-header">
             Pinterest Tag ID setting
-            <a class="pys_external_link" href="https://www.pixelyoursite.com/pinterest-tag?utm_source=pys-free-plugin&utm_medium=pinterest-badge&utm_campaign=requiere-free-add-on" target="_blank">Requires free add-on <i class="fa fa-external-link"></i></a>
+            <a class="pys_external_link" href="https://www.pixelyoursite.com/pinterest-tag?utm_source=pys-free-plugin&utm_medium=pinterest-badge&utm_campaign=requiere-free-add-on" target="_blank">Requires paid add-on <i class="fa fa-external-link"></i></a>
         </div>
     </div>
 <?php endif; ?>
@@ -335,7 +335,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
     </div>
 <?php endif; ?>
 
-<?php if ( Pinterest()->enabled() ) : ?>
+    <?php if ( Pinterest()->enabled() ) : ?>
 <div class="row">
     <div class="col">
         <?php Pinterest()->render_switcher_input( 'edd_checkout_enabled' ); ?>
@@ -345,7 +345,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 </div>
 <?php endif; ?>
 
-<div class="row mt-3">
+    <div class="row mt-3">
     <div class="col-11 col-offset-left">
         <label class="label-inline">Facebook and Pinterest value parameter settings:</label>
     </div>
@@ -353,7 +353,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
      <?php renderPopoverButton( 'edd_purchase_event_value' ); ?>
  </div>
 </div>
-<div class="row">
+    <div class="row">
     <div class="col col-offset-left">
         <div>
             <div class="collapse-inner">
@@ -376,7 +376,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 </div>
 </div>
 
-<?php if ( GA()->enabled() ) : ?>
+    <?php if ( GA()->enabled() ) : ?>
 <div class="row mb-1">
     <div class="col">
         <?php GA()->render_switcher_input( 'edd_purchase_enabled' ); ?>
@@ -391,7 +391,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 </div>
 <?php endif; ?>
 
-<?php if ( Ads()->enabled() ) : ?>
+    <?php if ( Ads()->enabled() ) : ?>
 <div class="row">
     <div class="col">
         <?php Ads()->render_switcher_input( 'edd_purchase_enabled' ); ?>
@@ -401,7 +401,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 <?php AdsHelpers\renderConversionLabelInputs( 'edd_purchase' ); ?>
 <?php endif; ?>
 
-<?php if ( Bing()->enabled() ) : ?>
+    <?php if ( Bing()->enabled() ) : ?>
 <div class="row">
     <div class="col-11">
         <?php Bing()->render_switcher_input( 'edd_purchase_enabled' ); ?>
@@ -413,6 +413,21 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
     </div>
 </div>
 <?php endif; ?>
+
+    <?php if ( Tiktok()->enabled() ) : ?>
+        <div class="row">
+            <div class="col-11">
+                <?php Tiktok()->render_switcher_input( 'edd_purchase_enabled' ); ?>
+                <h4 class="switcher-label">Enable the PlaceAnOrder event on TikTok</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-11">
+                <?php Tiktok()->render_switcher_input( 'edd_complete_payment_enabled' ); ?>
+                <h4 class="switcher-label">Enable the CompletePayment event on TikTok</h4>
+            </div>
+        </div>
+    <?php endif; ?>
 
 <div class="row mt-3">
     <div class="col">
@@ -433,7 +448,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
     </div>
     <div class="card-body">
        
-       <?php if ( Facebook()->enabled() ) : ?>
+    <?php if ( Facebook()->enabled() ) : ?>
        <div class="row">
         <div class="col">
             <?php Facebook()->render_switcher_input( 'edd_initiate_checkout_enabled' ); ?>
@@ -442,7 +457,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
     </div>
 <?php endif; ?>
 
-<?php if ( Pinterest()->enabled() ) : ?>
+    <?php if ( Pinterest()->enabled() ) : ?>
 <div class="row">
     <div class="col">
         <?php Pinterest()->render_switcher_input( 'edd_initiate_checkout_enabled' ); ?>
@@ -452,7 +467,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 </div>
 <?php endif; ?>
 
-<div class="row my-3">
+    <div class="row my-3">
     <div class="col-11 col-offset-left">
         <?php PYS()->render_switcher_input( 'edd_initiate_checkout_value_enabled', true ); ?>
         <h4 class="indicator-label">Event value on Facebook and Pinterest</h4>
@@ -461,7 +476,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
       <?php renderPopoverButton( 'edd_initiate_checkout_event_value' ); ?>
   </div>
 </div>
-<div class="row">
+    <div class="row">
     <div class="col col-offset-left">
         <div <?php renderCollapseTargetAttributes( 'edd_initiate_checkout_value_enabled', PYS() ); ?>>
             <div class="collapse-inner pt-0">
@@ -485,7 +500,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 </div>
 </div>
 
-<?php if ( GA()->enabled() ) : ?>
+    <?php if ( GA()->enabled() ) : ?>
 <div class="row mb-1">
     <div class="col">
         <?php GA()->render_switcher_input( 'edd_initiate_checkout_enabled' ); ?>
@@ -500,8 +515,7 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 </div>
 <?php endif; ?>
 
-
-<?php if ( Bing()->enabled() ) : ?>
+    <?php if ( Bing()->enabled() ) : ?>
 <div class="row">
     <div class="col">
         <?php Bing()->render_switcher_input( 'edd_initiate_checkout_enabled' ); ?>
@@ -510,6 +524,15 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
     </div>
 </div>
 <?php endif; ?>
+
+    <?php if ( Tiktok()->enabled() ) : ?>
+            <div class="row">
+                <div class="col">
+                    <?php Tiktok()->render_switcher_input( 'edd_initiate_checkout_enabled' ); ?>
+                    <h4 class="switcher-label">Enable the InitiateCheckout on TikTok</h4>
+                </div>
+            </div>
+        <?php endif; ?>
 </div>
 </div>
 
@@ -529,82 +552,91 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
     </div>
 <?php endif; ?>
 
-<?php if ( Pinterest()->enabled() ) : ?>
-<div class="row">
-    <div class="col">
-        <?php Pinterest()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
-        <h4 class="switcher-label">Enable the AddToCart event on Pinterest</h4>
-        <?php Pinterest()->renderAddonNotice(); ?>
+    <?php if ( Pinterest()->enabled() ) : ?>
+    <div class="row">
+        <div class="col">
+            <?php Pinterest()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
+            <h4 class="switcher-label">Enable the AddToCart event on Pinterest</h4>
+            <?php Pinterest()->renderAddonNotice(); ?>
+        </div>
     </div>
-</div>
-<?php endif; ?>
+    <?php endif; ?>
 
-<div class="row my-3">
-    <div class="col-11 col-offset-left">
-        <?php PYS()->render_switcher_input( 'edd_add_to_cart_value_enabled', true ); ?>
-        <h4 class="indicator-label">Tracking Value</h4>
+    <div class="row my-3">
+        <div class="col-11 col-offset-left">
+            <?php PYS()->render_switcher_input( 'edd_add_to_cart_value_enabled', true ); ?>
+            <h4 class="indicator-label">Tracking Value</h4>
+        </div>
+        <div class="col-1">
+          <?php renderPopoverButton( 'edd_add_to_cart_event_value' ); ?>
+      </div>
     </div>
-    <div class="col-1">
-      <?php renderPopoverButton( 'edd_add_to_cart_event_value' ); ?>
-  </div>
-</div>
-<div class="row">
-    <div class="col col-offset-left">
-        <div <?php renderCollapseTargetAttributes( 'edd_add_to_cart_value_enabled', PYS() ); ?>>
-            <div class="collapse-inner pt-0">
-                <label class="label-inline">Facebook and Pinterest value parameter settings:</label>
-                <div class="custom-controls-stacked">
-                 <?php PYS()->render_radio_input( 'edd_add_to_cart_value_option', 'price', 'Downloads price (subtotal)' ); ?>
-                 <?php PYS()->render_radio_input( 'edd_add_to_cart_value_option', 'percent',
-                 'Percent of downloads value (subtotal)' ); ?>
-                 <div class="form-inline">
-                    <?php PYS()->render_number_input( 'edd_add_to_cart_value_percent' ); ?>
-                </div>
-                <?php PYS()->render_radio_input( 'edd_add_to_cart_value_option', 'global',
-                'Use Global value' ); ?>
-                <div class="form-inline">
-                    <?php PYS()->render_number_input( 'edd_add_to_cart_value_global' ); ?>
+    <div class="row">
+        <div class="col col-offset-left">
+            <div <?php renderCollapseTargetAttributes( 'edd_add_to_cart_value_enabled', PYS() ); ?>>
+                <div class="collapse-inner pt-0">
+                    <label class="label-inline">Facebook and Pinterest value parameter settings:</label>
+                    <div class="custom-controls-stacked">
+                     <?php PYS()->render_radio_input( 'edd_add_to_cart_value_option', 'price', 'Downloads price (subtotal)' ); ?>
+                     <?php PYS()->render_radio_input( 'edd_add_to_cart_value_option', 'percent',
+                     'Percent of downloads value (subtotal)' ); ?>
+                     <div class="form-inline">
+                        <?php PYS()->render_number_input( 'edd_add_to_cart_value_percent' ); ?>
+                    </div>
+                    <?php PYS()->render_radio_input( 'edd_add_to_cart_value_option', 'global',
+                    'Use Global value' ); ?>
+                    <div class="form-inline">
+                        <?php PYS()->render_number_input( 'edd_add_to_cart_value_global' ); ?>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-</div>
+    </div>
 
-<?php if ( GA()->enabled() ) : ?>
-<div class="row mb-1">
-    <div class="col">
-        <?php GA()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
-        <h4 class="switcher-label">Enable the add_to_cart event on Google Analytics</h4>
+    <?php if ( GA()->enabled() ) : ?>
+    <div class="row mb-1">
+        <div class="col">
+            <?php GA()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
+            <h4 class="switcher-label">Enable the add_to_cart event on Google Analytics</h4>
+        </div>
     </div>
-</div>
-<div class="row">
-    <div class="col col-offset-left">
-        <?php GA()->render_checkbox_input( 'edd_add_to_cart_non_interactive',
-        'Non-interactive event' ); ?>
+    <div class="row">
+        <div class="col col-offset-left">
+            <?php GA()->render_checkbox_input( 'edd_add_to_cart_non_interactive',
+            'Non-interactive event' ); ?>
+        </div>
     </div>
-</div>
-<?php endif; ?>
+    <?php endif; ?>
 
-<?php if ( Ads()->enabled() ) : ?>
-<div class="row">
-    <div class="col">
-        <?php Ads()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
-        <h4 class="switcher-label">Enable the add_to_cart event on Google Ads</h4>
+    <?php if ( Ads()->enabled() ) : ?>
+    <div class="row">
+        <div class="col">
+            <?php Ads()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
+            <h4 class="switcher-label">Enable the add_to_cart event on Google Ads</h4>
+        </div>
     </div>
-</div>
-<?php AdsHelpers\renderConversionLabelInputs( 'edd_add_to_cart' ); ?>
-<?php endif; ?>
+    <?php AdsHelpers\renderConversionLabelInputs( 'edd_add_to_cart' ); ?>
+    <?php endif; ?>
 
-<?php if ( Bing()->enabled() ) : ?>
-<div class="row">
-    <div class="col">
-        <?php Bing()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
-        <h4 class="switcher-label">Enable the AddToCart event on Bing</h4>
-        <?php Bing()->renderAddonNotice(); ?>
+    <?php if ( Bing()->enabled() ) : ?>
+    <div class="row">
+        <div class="col">
+            <?php Bing()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
+            <h4 class="switcher-label">Enable the AddToCart event on Bing</h4>
+            <?php Bing()->renderAddonNotice(); ?>
+        </div>
     </div>
-</div>
-<?php endif; ?>
+    <?php endif; ?>
+
+    <?php if ( Tiktok()->enabled() ) : ?>
+            <div class="row">
+                <div class="col">
+                    <?php Tiktok()->render_switcher_input( 'edd_add_to_cart_enabled' ); ?>
+                    <h4 class="switcher-label">Enable the AddToCart event on TikTok</h4>
+                </div>
+            </div>
+        <?php endif; ?>
 </div>
 </div>
 
@@ -697,6 +729,14 @@ use PixelYourSite\Ads\Helpers as AdsHelpers;
 <?php AdsHelpers\renderConversionLabelInputs( 'edd_view_content' ); ?>
 <?php endif; ?>
 
+    <?php if ( Tiktok()->enabled() ) : ?>
+        <div class="row">
+            <div class="col">
+                <?php Tiktok()->render_switcher_input( 'edd_view_content_enabled' ); ?>
+                <h4 class="switcher-label">Enable the ViewContent event on Tiktok</h4>
+            </div>
+        </div>
+    <?php endif; ?>
 <?php if ( Bing()->enabled() ) : ?>
 <div class="row">
     <div class="col">

@@ -117,7 +117,7 @@ function renderSwitcherInput( &$event, $key ) {
  * @param string      $key
  * @param array       $options
  */
-function renderSelectInput( &$event, $key, $options, $full_width = false ) {
+function renderSelectInput( &$event, $key, $options, $full_width = false ,$classes = '') {
 
 	if ( $key == 'currency' ) {
 		
@@ -137,7 +137,7 @@ function renderSelectInput( &$event, $key, $options, $full_width = false ) {
 
 	?>
 
-	<select class="form-control-sm" id="<?php esc_attr_e( $attr_id ); ?>"
+	<select class="form-control-sm <?=$classes?>" id="<?php esc_attr_e( $attr_id ); ?>"
 	        name="<?php esc_attr_e( $attr_name ); ?>" autocomplete="off" style="<?php esc_attr_e( $attr_width ); ?>">
 		<?php foreach ( $options as $option_key => $option_value ) : ?>
 			<option value="<?php echo esc_attr( $option_key ); ?>" <?php selected( $option_key,
@@ -153,7 +153,7 @@ function renderSelectInput( &$event, $key, $options, $full_width = false ) {
  * @param string      $key
  * @param array       $options
  */
-function renderGroupSelectInput( &$event, $key, $groups, $full_width = false ) {
+function renderGroupSelectInput( &$event, $key, $groups, $full_width = false,$classes = '' ) {
 
     $attr_name  = "pys[event][$key]";
     $attr_id    = 'pys_event_' . $key;
@@ -163,7 +163,7 @@ function renderGroupSelectInput( &$event, $key, $groups, $full_width = false ) {
 
     ?>
 
-    <select class="form-control-sm" id="<?php esc_attr_e( $attr_id ); ?>"
+    <select class="form-control-sm <?=$classes?>" id="<?php esc_attr_e( $attr_id ); ?>"
             name="<?php esc_attr_e( $attr_name ); ?>" autocomplete="off" style="<?php esc_attr_e( $attr_width ); ?>">
 
         <?php foreach ($groups as $group => $options) :?>
@@ -215,39 +215,10 @@ function renderPostTypeSelect(&$event, $key) {
  */
 function renderCurrencyParamInput( &$event, $key ) {
 	
-	$currencies = array(
-		'AUD' => 'Australian Dollar',
-		'BRL' => 'Brazilian Real',
-		'CAD' => 'Canadian Dollar',
-		'CZK' => 'Czech Koruna',
-		'DKK' => 'Danish Krone',
-		'EUR' => 'Euro',
-		'HKD' => 'Hong Kong Dollar',
-		'HUF' => 'Hungarian Forint',
-		'IDR' => 'Indonesian Rupiah',
-		'ILS' => 'Israeli New Sheqel',
-		'JPY' => 'Japanese Yen',
-		'KRW' => 'Korean Won',
-		'MYR' => 'Malaysian Ringgit',
-		'MXN' => 'Mexican Peso',
-		'NOK' => 'Norwegian Krone',
-		'NZD' => 'New Zealand Dollar',
-		'PHP' => 'Philippine Peso',
-		'PLN' => 'Polish Zloty',
-		'RON' => 'Romanian Leu',
-		'GBP' => 'Pound Sterling',
-		'SGD' => 'Singapore Dollar',
-		'SEK' => 'Swedish Krona',
-		'CHF' => 'Swiss Franc',
-		'TWD' => 'Taiwan New Dollar',
-		'THB' => 'Thai Baht',
-		'TRY' => 'Turkish Lira',
-		'USD' => 'U.S. Dollar',
-		'ZAR' => 'South African Rands'
-	);
+
 	
 	//@since: 7.0.7
-    $currencies = apply_filters( 'pys_currencies_list', $currencies );
+    $currencies = apply_filters( 'pys_currencies_list', CustomEvent::$currencies );
 	
 	$options['']         = 'Please, select...';
 	$options             = array_merge( $options, $currencies );
@@ -288,8 +259,112 @@ function renderFacebookEventTypeInput( &$event, $key ) {
 	);
 
 	renderSelectInput( $event, $key, $options );
-
 }
+
+/**
+ * @param CustomEvent $event
+ * @param string      $key
+ */
+function renderTikTokEventTypeInput( &$event, $key ) {
+
+
+
+    $attr_name  = "pys[event][$key]";
+    $attr_id    = 'pys_event_' . $key;
+    $attr_value = esc_attr($event->$key);
+
+    ?>
+    <select class="form-control-sm" id="<?php esc_attr_e( $attr_id ); ?>" name="<?php esc_attr_e( $attr_name ); ?>" autocomplete="off">
+        <?php foreach ( CustomEvent::$tikTokEvents as $option_key => $option_value ) :
+            $value = esc_attr( $option_key ); ?>
+
+            <option data-fields='<?=json_encode($option_value)?>'
+                    value="<?=$value ?>" <?php selected( $value, $attr_value ); ?> >
+                <?=$value ?>
+            </option>
+
+        <?php endforeach; ?>
+    </select>
+        <?php
+}
+/**
+ * @param CustomEvent $event
+ * @param string      $key
+ */
+function renderTikTokEventId( &$event, $key ) {
+    $options = array(
+        'all'          => 'All pixels',
+    );
+    $mainPixels = PixelYourSite\Tiktok()->getPixelIDs();
+
+    foreach ($mainPixels as $mainPixel) {
+        $options[$mainPixel] = $mainPixel.'(global)';
+    }
+//    if(PixelYourSite\isSuperPackActive('3.0.0')){
+//        $additionalPixels = PixelYourSite\SuperPack()->getFbAdditionalPixel();
+//        foreach ($additionalPixels as $aPixel) {
+//            $options[$aPixel->pixel] = $aPixel->pixel.'(conditional)';
+//        }
+//    }
+    renderSelectInput( $event, $key, $options );
+}
+/**
+ * @param CustomEvent $event
+ * @param string      $key
+ */
+function renderFacebookEventId( &$event, $key ) {
+    $options = array(
+        'all'          => 'All pixels',
+    );
+    $mainPixels = PixelYourSite\Facebook()->getPixelIDs();
+    foreach ($mainPixels as $mainPixel) {
+        $options[$mainPixel] = $mainPixel.'(global)';
+    }
+    if(PixelYourSite\isSuperPackActive('3.0.0')){
+        $additionalPixels = PixelYourSite\SuperPack()->getFbAdditionalPixel();
+        foreach ($additionalPixels as $aPixel) {
+            $options[$aPixel->pixel] = $aPixel->pixel.'(conditional)';
+        }
+    }
+    renderSelectInput( $event, $key, $options );
+}
+
+/**
+ * @param CustomEvent $event
+ * @param string      $key
+ */
+function renderGaEventId( &$event, $key ) {
+    $options = array(
+    );
+    $mainPixels = PixelYourSite\GA()->getPixelIDs();
+    foreach ($mainPixels as $mainPixel) {
+        $options[$mainPixel] = $mainPixel.'(global)';
+    }
+    if(PixelYourSite\isSuperPackActive('3.0.0')){
+        $additionalPixels = PixelYourSite\SuperPack()->getGaAdditionalPixel();
+        foreach ($additionalPixels as $aPixel) {
+            $options[$aPixel->pixel] = $aPixel->pixel.'(conditional)';
+        }
+    }
+    renderSelectInput( $event, $key, $options );
+}
+
+/**
+ * @param CustomEvent $event
+ * @param string      $key
+ */
+function renderBingEventId( &$event, $key ) {
+    $options = array(
+        'all'          => 'All pixels',
+    );
+    $mainPixels = PixelYourSite\Bing()->getPixelIDs();
+    foreach ($mainPixels as $mainPixel) {
+        $options[$mainPixel] = $mainPixel.'(global)';
+    }
+
+    renderSelectInput( $event, $key, $options );
+}
+
 
 /**
  * @param CustomEvent $event
@@ -366,7 +441,7 @@ function renderGoogleAnalyticsActionInput( &$event, $key ) {
         'view_search_results' => 'view_search_results',
     );
 
-    renderSelectInput( $event, $key, $options, true );
+    renderSelectInput( $event, $key, $options, true ,'action_old');
 
 }
 
@@ -375,7 +450,7 @@ function renderGoogleAnalyticsActionInput( &$event, $key ) {
  * @param string      $key
  */
 function renderGoogleAnalyticsV4ActionInput( &$event, $key ) {
-    renderGroupSelectInput( $event, $key, $event->GAEvents, false );
+    renderGroupSelectInput( $event, $key, $event->GAEvents, false,'action_g4' );
 }
 /**
  * @param CustomEvent $event
@@ -419,11 +494,17 @@ function renderGoogleAdsActionInput( &$event, $key ) {
 function renderGoogleAdsConversionID( &$event, $key ) {
 	
 	$options = array(
-		'_all' => 'All',
+
 	);
-	
-	foreach ( PixelYourSite\Ads()->getPixelIDs() as $conversion_id ) {
-	    $options[ $conversion_id ] = $conversion_id;
+
+    foreach (PixelYourSite\Ads()->getPixelIDs() as $mainPixel) {
+        $options[$mainPixel] = $mainPixel.'(global)';
+    }
+    if(PixelYourSite\isSuperPackActive('3.0.0')){
+        $additionalPixels = PixelYourSite\SuperPack()->getAdsAdditionalPixel();
+        foreach ($additionalPixels as $aPixel) {
+            $options[$aPixel->pixel] = $aPixel->pixel.'(conditional)';
+        }
     }
 
 	renderSelectInput( $event, $key, $options, true );

@@ -162,6 +162,7 @@ abstract class Settings {
 
 		if ( $force || empty( $this->values ) ) {
 			$this->values = get_option( $this->option_key, null );
+
 		}
 
 		// if there are no settings defined, use default values
@@ -291,8 +292,7 @@ abstract class Settings {
                value="<?php esc_attr_e( $attr_value ); ?>"
                placeholder="<?php esc_attr_e( $placeholder ); ?>"
                class="form-control">
-		
-		<?php
+         <?php
 		
 	}
 
@@ -328,7 +328,7 @@ abstract class Settings {
      * @param string $placeholder
      * @param int    $index
      */
-    public function render_text_input_array_item( $key, $placeholder = '', $index = 0 ) {
+    public function render_text_input_array_item( $key, $placeholder = '', $index = 0,$hidden = false ) {
 
         $attr_name = "pys[$this->slug][$key][]";
         $attr_id = 'pys_' . $this->slug . '_' . $key . '_' . $index;
@@ -338,7 +338,7 @@ abstract class Settings {
 
         ?>
 
-        <input type="text" name="<?php esc_attr_e( $attr_name ); ?>"
+        <input type=<?=$hidden? "hidden": "text"?> name="<?php esc_attr_e( $attr_name ); ?>"
                   id="<?php esc_attr_e( $attr_id ); ?>"
                   value="<?php esc_attr_e( $attr_value ); ?>"
                   placeholder="<?php esc_attr_e( $placeholder ); ?>"
@@ -588,7 +588,7 @@ abstract class Settings {
 	 * @param null $placeholder
 	 * @param bool $disabled
 	 */
-	public function render_number_input( $key, $placeholder = null, $disabled = false , $max = null,$min = 0) {
+	public function render_number_input( $key, $placeholder = '', $disabled = false , $max = null,$min = 0) {
 
 		$attr_name  = "pys[$this->slug][$key]";
 		$attr_id    = 'pys_' . $this->slug . '_' . $key;

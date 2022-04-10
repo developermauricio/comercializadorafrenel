@@ -65,7 +65,7 @@ class CurlAdapter extends \PYS_PRO_GLOBAL\FacebookAds\Http\Adapter\AbstractAdapt
     public function getOpts()
     {
         if ($this->opts === null) {
-            $this->opts = new \ArrayObject(array(\CURLOPT_CONNECTTIMEOUT => 10, \CURLOPT_TIMEOUT => 60, \CURLOPT_RETURNTRANSFER => true, \CURLOPT_HEADER => \true, \CURLOPT_CAINFO => $this->getCaBundlePath()));
+            $this->opts = new \ArrayObject(array(\CURLOPT_CONNECTTIMEOUT => 10, \CURLOPT_TIMEOUT => 60, \CURLOPT_RETURNTRANSFER => \true, \CURLOPT_HEADER => \true, \CURLOPT_CAINFO => $this->getCaBundlePath()));
         }
         return $this->opts;
     }

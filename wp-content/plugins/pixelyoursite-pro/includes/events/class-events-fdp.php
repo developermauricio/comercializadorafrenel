@@ -72,11 +72,11 @@ class EventsFdp extends EventsFactory
         switch ($event) {
             case 'fdp_view_category':
             case 'fdp_view_content': {
-                return new SingleEvent($event,EventTypes::$STATIC);
+                return new SingleEvent($event,EventTypes::$STATIC,self::getSlug());
             }
             case 'fdp_add_to_cart':
             case 'fdp_purchase': {
-                return new SingleEvent($event,EventTypes::$TRIGGER);
+                return new SingleEvent($event,EventTypes::$TRIGGER,self::getSlug());
             }
         }
     }

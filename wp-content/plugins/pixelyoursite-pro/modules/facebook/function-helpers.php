@@ -33,22 +33,23 @@ function getAdvancedMatchingParams() {
 
 	if ( PixelYourSite\isWooCommerceActive() && PixelYourSite\PYS()->getOption( 'woo_enabled' ) ) {
 
-		// if first name is not set in regular wp user meta
-		if ( empty( $params['fn'] ) ) {
-			$params['fn'] = $user->get( 'billing_first_name' );
-		}
+        if ( $user->ID ) {
+            // if first name is not set in regular wp user meta
+            if (empty($params['fn'])) {
+                $params['fn'] = $user->get('billing_first_name');
+            }
 
-		// if last name is not set in regular wp user meta
-		if ( empty( $params['ln'] ) ) {
-			$params['ln'] = $user->get( 'billing_last_name' );
-		}
+            // if last name is not set in regular wp user meta
+            if (empty($params['ln'])) {
+                $params['ln'] = $user->get('billing_last_name');
+            }
 
-		$params['ph'] = $user->get( 'billing_phone' );
-		$params['ct'] = $user->get( 'billing_city' );
-		$params['st'] = $user->get( 'billing_state' );
+            $params['ph'] = $user->get('billing_phone');
+            $params['ct'] = $user->get('billing_city');
+            $params['st'] = $user->get('billing_state');
 
-		$params['country'] = $user->get( 'billing_country' );
-
+            $params['country'] = $user->get('billing_country');
+        }
 		/**
 		 * Add purchase WooCommerce Advanced Matching params
 		 */
@@ -111,7 +112,7 @@ function getAdvancedMatchingParams() {
 				$payment_key = urldecode( $_GET['payment_key'] );
 			} else if ( $session ) {
 				$payment_key = $session['purchase_key'];
-			} elseif ( $edd_receipt_args['payment_key'] ) {
+			} elseif ( $edd_receipt_args && $edd_receipt_args['payment_key'] ) {
 				$payment_key = $edd_receipt_args['payment_key'];
 			}
 
@@ -247,6 +248,26 @@ function getFacebookWooProductDataId( $item ) {
 
 }
 
+function getFacebookWooCartProductId( $product ) {
+
+    $product_id = $product['product_id'];
+
+    if ( PixelYourSite\Facebook()->getOption( 'woo_variable_as_simple' )
+        && isset( $product['parent_id'] ) && $product['parent_id'] !== 0 ) {
+        $product_id = $product['parent_id'];
+    }
+
+    // Facebook for WooCommerce plugin integration
+    if ( ! isDefaultWooContentIdLogic() ) {
+        $product_id = $product['product_id'];
+    }
+    return $product_id;
+}
+
+/**@deprecated use getFacebookWooCartProductId
+ * @param $item
+ * @return int|mixed
+ */
 function getFacebookWooCartItemId( $item ) {
 
 	if ( ! PixelYourSite\Facebook()->getOption( 'woo_variable_as_simple' ) && isset( $item['variation_id'] ) && $item['variation_id'] !== 0 ) {
@@ -257,17 +278,13 @@ function getFacebookWooCartItemId( $item ) {
 
 	// Facebook for WooCommerce plugin integration
 	if ( ! isDefaultWooContentIdLogic() ) {
-
 		if ( isset( $item['variation_id'] ) && $item['variation_id'] !== 0 ) {
 			$product_id = $item['variation_id'];
 		} else {
 			$product_id = $item['product_id'];
 		}
-
 	}
-
 	return $product_id;
-
 }
 
 function getWooCustomAudiencesOptimizationParams( $post_id ) {
@@ -380,6 +397,100 @@ function getWooSingleAddToCartParams( $_product_id, $qty = 1, $is_external = fal
 
 }
 
+/**
+ * @param PixelYourSite\SingleEvent $event
+ *
+ */
+function getWooCartEventParams($event,$args = []) {
+    $content_ids = [];
+    $content_categories = [];
+    $content_names = [];
+    $tags = [];
+    $num_items = 0;
+
+    foreach ($event->args['products'] as $product) {
+        $product_id = getFacebookWooCartProductId($product);
+        $content_id = getFacebookWooProductContentId( $product_id );
+        $content_ids = array_merge( $content_ids, $content_id );
+
+        $content_names[]      = $product['name'];
+        $tags = array_merge( $tags, $product['tags'] );
+        $content_categories   = array_merge( $content_categories, array_column($product['categories'],"name") );
+        $contents[] = array(
+            'id'         => (string) reset( $content_id ),
+            'quantity'   => $product['quantity'],
+        );
+        $num_items += $product['quantity'];
+    }
+
+    $content_categories = array_unique( $content_categories );
+    $tags = array_unique( $tags );
+    $tags = array_slice( $tags, 0, 100 );
+    $params = [
+        'content_type' => 'product',
+        'content_ids' =>  $content_ids ,
+        'content_name' => implode( ', ', $content_names ),
+        'category_name' => implode( ', ', $content_categories ),
+        'tags' => implode( ', ', $tags ),
+    ];
+
+    $subtotal = PixelYourSite\getWooEventCartSubtotal($event);
+
+    if ( $event->getId() == 'woo_initiate_checkout' ) {
+
+        $params['num_items'] = $num_items;
+        $params['subtotal'] = PixelYourSite\pys_round($subtotal);
+
+        $value_enabled_option = 'woo_initiate_checkout_value_enabled';
+        $value_option_option  = 'woo_initiate_checkout_value_option';
+        $value_global_option  = 'woo_initiate_checkout_value_global';
+        $value_percent_option = 'woo_initiate_checkout_value_percent';
+
+    } elseif ( $event->getId() == 'woo_paypal' ) {
+
+        $params['num_items'] = $num_items;
+        $params['subtotal'] = PixelYourSite\pys_round($subtotal);
+        $params['action'] = 'PayPal';
+
+        $value_enabled_option = 'woo_paypal_value_enabled';
+        $value_option_option  = 'woo_paypal_value_option';
+        $value_global_option  = 'woo_paypal_value_global';
+        $value_percent_option = '';
+    } else { // AddToCart
+
+        $value_enabled_option = 'woo_add_to_cart_value_enabled';
+        $value_option_option  = 'woo_add_to_cart_value_option';
+        $value_global_option  = 'woo_add_to_cart_value_global';
+        $value_percent_option = 'woo_add_to_cart_value_percent';
+    }
+
+
+    if ( PixelYourSite\PYS()->getOption( $value_enabled_option ) ) {
+
+        $params['currency'] = get_woocommerce_currency();
+        $params['value']    = PixelYourSite\pys_round(PixelYourSite\getWooEventValueProducts(
+            PixelYourSite\PYS()->getOption( $value_option_option ),
+            PixelYourSite\PYS()->getOption( $value_global_option, 0 ),
+            PixelYourSite\PYS()->getOption( $value_percent_option, 100 ),
+            PixelYourSite\getWooEventCartTotal($event),
+            $event->args
+        ));
+    }
+
+    if ( isDefaultWooContentIdLogic() ) {
+        // Facebook for WooCommerce plugin does not support new Dynamic Ads parameters
+        $params['contents'] = $contents;
+    }
+
+    return $params;
+}
+
+/**
+ * @deprecated
+ * @param string $context
+ * @param null $filter
+ * @return array
+ */
 function getWooCartParams( $context = 'cart' ,$filter = null) {
 
 	$params['content_type'] = 'product';
@@ -397,12 +508,6 @@ function getWooCartParams( $context = 'cart' ,$filter = null) {
 		if(!$product_id) continue;
 
 		$content_id = getFacebookWooProductContentId( $product_id );
-
-		if($filter && isset($filter["category"])) {
-            $_product = wc_get_product($cart_item['product_id']);
-            if(!$_product) continue;
-            if(!in_array($filter["category"],$_product->get_category_ids())) continue;
-        }
 
 		$content_ids = array_merge( $content_ids, $content_id );
 
@@ -495,176 +600,22 @@ function getWooCartParams( $context = 'cart' ,$filter = null) {
 
 
 /**
- * @param \WC_Order $order
+ * @param  PixelYourSite\SingleEvent $event
  * @return array
  */
-function getCompleteRegistrationOrderParams($order) {
+function getCompleteRegistrationOrderParams($event) {
     $params = array();
 
     $value_option   = PixelYourSite\Facebook()->getOption( 'woo_complete_registration_custom_value' );
     $global_value   = PixelYourSite\Facebook()->getOption( 'woo_complete_registration_global_value', 0 );
     $percents_value = PixelYourSite\Facebook()->getOption( 'woo_complete_registration_percent_value', 100 );
-
-    $params['value'] = PixelYourSite\getWooEventValueOrder( $value_option, $order, $global_value, $percents_value );
-    $params['currency'] = get_woocommerce_currency();
+    $total = PixelYourSite\getWooEventOrderTotal($event);
+    $params['value'] = PixelYourSite\getWooEventValueProducts( $value_option, $global_value, $percents_value,$total,$event->args );
+    $params['currency'] = $event->args['currency'];
     return $params;
 }
 
-function getWooPurchaseParams( $context ,$filter = null,$args = null) {
 
-    if($args && !empty($args['order_id'])) {
-        $order_id = $args['order_id'];
-    } else {
-        $order_id = wooGetOrderIdFromRequest();
-    }
-
-	$order = new \WC_Order( $order_id );
-
-	$content_ids        = array();
-	$content_names      = array();
-	$content_categories = array();
-	$tags               = array();
-	$num_items          = 0;
-	$contents           = array();
-
-    $order_total = (float) $order->get_total( 'edit' );
-    $order_tax = (float) $order->get_total_tax( 'edit' );
-
-	foreach ( $order->get_items( 'line_item' ) as $line_item ) {
-
-		$product_id  = getFacebookWooCartItemId( $line_item );
-
-        if($filter && isset($filter["category"])) {
-            $_product = wc_get_product($line_item['product_id']);
-            if($_product && !in_array($filter["category"],$_product->get_category_ids())) continue;
-        }
-
-        if(!empty($args['offer_product_id']) ) {
-            if($args['offer_product_id'] == $product_id) {
-                $order_total = $line_item['total'];
-                $order_tax = $line_item['total_tax'];
-            } else {
-                continue;
-            }
-        }
-
-
-
-
-        $content_id  = getFacebookWooProductContentId( $product_id );
-		$content_ids = array_merge( $content_ids, $content_id );
-
-		$num_items += $line_item['qty'];
-
-		// content_name, category_name, tags
-		$custom_audiences = getWooCustomAudiencesOptimizationParams( $product_id );
-
-		$content_names[]      = $custom_audiences['content_name'];
-		$content_categories[] = $custom_audiences['category_name'];
-
-		$cart_item_tags = PixelYourSite\getObjectTerms( 'product_tag', $product_id );
-		$tags = array_merge( $tags, $cart_item_tags );
-
-		// raw product id
-		$_product_id = empty( $line_item['variation_id'] ) ? $line_item['product_id']
-			: $line_item['variation_id'];
-
-		// contents
-		$contents[] = array(
-			'id'         => (string) reset( $content_id ),
-			'quantity'   => $line_item['qty'],
-			'item_price' => PixelYourSite\getWooProductPriceToDisplay( $_product_id ),
-		);
-
-	}
-
-	if(count($contents) == 0) return false;
-
-	$params['content_type']  = 'product';
-	$params['content_ids']   = ( $content_ids );
-	$params['content_name']  = implode( ', ', $content_names );
-	$params['category_name'] = implode( ', ', $content_categories );
-
-	// contents
-	if ( isDefaultWooContentIdLogic() ) {
-
-		// Facebook for WooCommerce plugin does not support new Dynamic Ads parameters
-		$params['contents'] = ( $contents );
-
-	}
-
-	$tags           = array_unique( $tags );
-	$tags           = array_slice( $tags, 0, 100 );
-	if(count($tags))
-	    $params['tags'] = implode( ', ', $tags );
-
-	$params['num_items'] = $num_items;
-
-	// add "value" only on Purchase event
-	if ( $context == 'woo_purchase' ) {
-
-		$value_option   = PixelYourSite\PYS()->getOption( 'woo_purchase_value_option' );
-		$global_value   = PixelYourSite\PYS()->getOption( 'woo_purchase_value_global', 0 );
-		$percents_value = PixelYourSite\PYS()->getOption( 'woo_purchase_value_percent', 100 );
-
-		$params['value'] = PixelYourSite\getWooEventValueOrder( $value_option, $order, $global_value, $percents_value );
-		$params['currency'] = get_woocommerce_currency();
-        $params['order_id'] = $order_id;
-	}
-
-	// shipping method
-	if ( $shipping_methods = $order->get_items( 'shipping' ) ) {
-
-		$labels = array();
-		foreach ( $shipping_methods as $shipping ) {
-			$labels[] = $shipping['name'] ? $shipping['name'] : null;
-		}
-
-		$params['shipping'] = implode( ', ', $labels );
-
-	}
-
-	// coupons
-	if ( $coupons = $order->get_items( 'coupon' ) ) {
-
-		$labels = array();
-		foreach ( $coupons as $coupon ) {
-			$labels[] = $coupon['name'] ? $coupon['name'] : null;
-		}
-
-		$params['coupon_used'] = 'yes';
-		$params['coupon_name'] = implode( ', ', $labels );
-
-	} else {
-
-		$params['coupon_used'] = 'no';
-
-	}
-
-    if(!empty($args['offer_product_id'])) {
-
-    } else {
-
-    }
-
-    $params['total'] = $order_total;
-	$params['tax'] = $order_tax;
-
-	if ( PixelYourSite\isWooCommerceVersionGte( '2.7' ) ) {
-		$params['shipping_cost'] = (float) $order->get_shipping_total( 'edit' ) + (float) $order->get_shipping_tax( 'edit' );
-	} else {
-		$params['shipping_cost'] = (float) $order->get_total_shipping() + (float) $order->get_shipping_tax();
-	}
-
-	$customer_params = PixelYourSite\PYS()->getEventsManager()->getWooCustomerTotals($order_id);
-
-	$params['predicted_ltv'] = $customer_params['ltv'];
-	$params['average_order'] = $customer_params['avg_order_value'];
-	$params['transactions_count'] = $customer_params['orders_count'];
-
-	return $params;
-
-}
 
 function isFacebookForWooCommerceActive() {
 	return class_exists( 'WC_Facebookcommerce' );

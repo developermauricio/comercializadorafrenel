@@ -167,6 +167,10 @@ function getAdminSecondaryNavTabs() {
             'url'  => buildAdminUrl( 'pixelyoursite', 'google_ads_settings' ),
             'name' => 'Google Ads Settings',
         ),
+        'tiktok'        => array(
+            'url'  => buildAdminUrl( 'pixelyoursite', 'tiktok_settings' ),
+            'name' => 'TikTok Settings',
+        ),
     );
     
     $tabs = apply_filters( 'pys_admin_secondary_nav_tabs', $tabs );

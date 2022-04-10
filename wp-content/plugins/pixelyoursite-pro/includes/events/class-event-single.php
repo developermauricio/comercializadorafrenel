@@ -8,8 +8,8 @@ class SingleEvent extends PYSEvent{
         'delay' => 0
     );
 
-    public function __construct($id,$type){
-        parent::__construct($id,$type);
+    public function __construct($id,$type,$category=''){
+        parent::__construct($id,$type,$category);
         $this->payload['type'] = $type;
     }
 
@@ -53,7 +53,6 @@ class SingleEvent extends PYSEvent{
         $data['ids'] = isset( $this->payload['ids'] ) ? $this->payload['ids'] : array();
         $data['hasTimeWindow'] = isset( $this->payload['hasTimeWindow'] )  ? $this->payload['hasTimeWindow'] : false;
         $data['timeWindow'] = isset( $this->payload['timeWindow'] )  ? $this->payload['timeWindow'] : 0;
-        $data['pixelIds'] = isset( $this->payload['pixelIds'] ) ? $this->payload['pixelIds'] : array();
         $data['eventID'] = isset( $this->payload['eventID'] ) ? $this->payload['eventID'] : "";
         $data['woo_order'] = isset( $this->payload['woo_order'] ) ? $this->payload['woo_order'] : "";
         $data['edd_order'] = isset( $this->payload['edd_order'] ) ? $this->payload['edd_order'] : "";

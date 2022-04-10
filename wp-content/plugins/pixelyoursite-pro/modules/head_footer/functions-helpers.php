@@ -47,6 +47,7 @@ function get_content_title() {
 			$term = get_term_by( 'slug', get_query_var( 'term' ), get_query_var( 'taxonomy' ) );
 
 		}
+        if(!$term) return "";
 
 		return $term->name;
 
@@ -188,7 +189,7 @@ function get_edd_order_meta( $metakey ) {
 		$payment_key = urldecode( $_GET['payment_key'] );
 	} else if ( $session ) {
 		$payment_key = $session['purchase_key'];
-	} elseif ( $edd_receipt_args['payment_key'] ) {
+	} elseif ( $edd_receipt_args && $edd_receipt_args['payment_key'] ) {
 		$payment_key = $edd_receipt_args['payment_key'];
 	}
 

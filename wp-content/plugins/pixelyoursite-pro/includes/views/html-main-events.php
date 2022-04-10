@@ -28,6 +28,19 @@ $export_url = buildAdminUrl( 'pixelyoursite', 'events', 'export' )
         </div>
     </div>
 </div>
+<div class="card card-static">
+    <div class="card-header">
+        Recommeded videos
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col">
+                <p><a href="https://www.youtube.com/watch?v=kEp5BDg7dP0" target="_blank">How to fire EVENTS with PixelYourSite (22:28) - watch now</a></p>
+                <p><a href="https://www.youtube.com/watch?v=PcXYYGOvahc" target="_blank">Track URL tags as event parameters (8:15) - watch now</a></p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="card card-static">
     <div class="card-header">
@@ -77,17 +90,17 @@ $export_url = buildAdminUrl( 'pixelyoursite', 'events', 'export' )
                     </tr>
                     </thead>
                     <tbody>
-        
+
                     <?php foreach ( CustomEventFactory::get() as $event ) : ?>
-        
+
                         <?php
                         $errorMessage = "";
                         /** @var CustomEvent $event */
-        
+
                         $event_edit_url = buildAdminUrl( 'pixelyoursite', 'events', 'edit', array(
                             'id' => $event->getPostId()
                         ) );
-        
+
                         $event_enable_url = buildAdminUrl( 'pixelyoursite', 'events', 'enable', array(
                             'pys'      => array(
                                 'event' => array(
@@ -96,7 +109,7 @@ $export_url = buildAdminUrl( 'pixelyoursite', 'events', 'export' )
                             ),
                             '_wpnonce' => wp_create_nonce( 'pys_enable_event' ),
                         ) );
-        
+
                         $event_disable_url = buildAdminUrl( 'pixelyoursite', 'events', 'disable', array(
                             'pys'      => array(
                                 'event' => array(
@@ -105,7 +118,7 @@ $export_url = buildAdminUrl( 'pixelyoursite', 'events', 'export' )
                             ),
                             '_wpnonce' => wp_create_nonce( 'pys_disable_event' ),
                         ) );
-        
+
                         $event_remove_url = buildAdminUrl( 'pixelyoursite', 'events', 'remove', array(
                             'pys'      => array(
                                 'event' => array(
@@ -134,25 +147,25 @@ $export_url = buildAdminUrl( 'pixelyoursite', 'events', 'export' )
                             case 'url_click':
                                 $event_type = 'Link Click';
                                 break;
-                
+
                             case 'css_click':
                                 $event_type = 'Element Click';
                                 break;
-                
+
                             case 'css_mouseover':
                                 $event_type = 'Element Mouseover';
                                 break;
-                
+
                             case 'scroll_pos':
                                 $event_type = 'Scroll Position';
                                 break;
-                                
+
                             default:
                                 $event_type = 'Page Visit';
                         }
-        
+
                         ?>
-        
+
                         <tr data-post_id="<?php esc_attr_e( $event->getPostId() ); ?>"
                             class="<?php echo $event->isEnabled() ? '' : 'disabled'; ?>">
                             <td>
@@ -190,19 +203,19 @@ $export_url = buildAdminUrl( 'pixelyoursite', 'events', 'export' )
                                 <?php else : ?>
                                     <i class="fa fa-facebook-square" style="opacity: .25;"></i>
                                 <?php endif; ?>
-                                
+
                                 <?php if ( GA()->enabled() && $event->isGoogleAnalyticsEnabled() ) : ?>
                                     <i class="fa fa-area-chart"></i>
                                 <?php else : ?>
                                     <i class="fa fa-area-chart" style="opacity: .25;"></i>
                                 <?php endif; ?>
-	
+
 	                            <?php if ( Ads()->enabled() && $event->isGoogleAdsEnabled() ) : ?>
                                     <i class="fa fa-google"></i>
 	                            <?php else : ?>
                                     <i class="fa fa-google" style="opacity: .25;"></i>
 	                            <?php endif; ?>
-                             
+
                                 <?php if ( Pinterest()->enabled() && $event->isPinterestEnabled() ) : ?>
                                     <i class="fa fa-pinterest-square"></i>
                                 <?php else : ?>
@@ -210,9 +223,9 @@ $export_url = buildAdminUrl( 'pixelyoursite', 'events', 'export' )
                                 <?php endif; ?>
                             </td>
                         </tr>
-        
+
                     <?php endforeach; ?>
-        
+
                     </tbody>
                 </table>
             </div>

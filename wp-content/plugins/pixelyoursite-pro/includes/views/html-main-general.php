@@ -46,8 +46,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
                 <div class="row mb-3">
                     <div class="col">
-                        Learn about Conversion API and Advanced Matching privacy and consent:
-                        <a href="https://www.youtube.com/watch?v=PsKdCkKNeLU" target="_blank">watch video</a>
+                        <p>
+                            Learn about Conversion API and Advanced Matching privacy and consent:
+                            <a href="https://www.youtube.com/watch?v=PsKdCkKNeLU" target="_blank">watch video</a>
+                        </p>
+                        <p>
+                            Install multiple Facebook Pixles with CAPI support:
+                            <a href="https://www.youtube.com/watch?v=HM98mGZshvc" target="_blank">watch video</a>
+                        </p>
                     </div>
                 </div>
 
@@ -100,7 +106,6 @@ if ( ! defined( 'ABSPATH' ) ) {
             <hr>
         <?php endif; ?>
 
-
         <?php if ( GA()->enabled() ) : ?>
 
             <div class="row align-items-center mb-3 py-2">
@@ -116,27 +121,35 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
         <input type="checkbox" id="gan_settings_switch" style="display: none">
         <div class="settings_content">
-            <div class="row pt-3 pb-3">
-                <div class="col-12">
-                    <?php GA()->render_switcher_input("use_4_version");?>
-                    <h4 class="switcher-label">Enable Google Analytics 4</h4>
-                    <div class="mt-1">
-                        <a href="https://www.pixelyoursite.com/documentation/enable-google-analytics-4" target="_blank">Watch this help video</a>
-                    </div>
-                </div>
-            </div>
+
             <div class="plate">
                 <div class="row pt-3 pb-3">
                     <div class="col-12">
                         <h4 class="label mb-3 ">Google Analytics tracking ID:</h4>
                         <?php GA()->render_pixel_id( 'tracking_id', 'Google Analytics tracking ID' ); ?>
+                        <p class="ga_pixel_info small">
+                            <?php
+                            $pixels = GA()->getPixelIDs();
+                            if(count($pixels)) {
+                                if(strpos($pixels[0], 'G') === 0) {
+                                    echo 'We identified this tag as a GA4 property.';
+                                } else {
+                                    echo 'We identified this tag as a Google Analytics Universal property.';
+                                }
+                            }
+
+                            ?>
+                        </p>
                         <small class="form-text mb-2">
                             <a href="https://www.pixelyoursite.com/documentation/add-your-google-analytics-code"
                                target="_blank">How to get it?</a>
                         </small>
                         <input type="checkbox" class="custom-control-input" name="pys[ga][is_enable_debug_mode][-1]" value="0" checked />
                         <?php GA()->render_checkbox_input_array("is_enable_debug_mode","Enable Analytics Debug mode for this property");?>
-
+                        <p>
+                            Install the old Google Analytics UA property and the new GA4 at the same time:
+                            <a href="https://www.youtube.com/watch?v=JUuss5sewxg" target="_blank">watch video</a>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -172,6 +185,15 @@ if ( ! defined( 'ABSPATH' ) ) {
                             <a href="https://www.pixelyoursite.com/documentation/google-ads-tag" target="_blank">How to get
                                 it?</a>
                         </small>
+                        <div class="mt-3 mb-3">
+                            How to install the Google the Google Ads Tag:
+                            <a href="https://www.youtube.com/watch?v=plkv_v4nz8I" target="_blank">watch video</a>
+                        </div>
+                        <div class="mb-3">
+                            How to configure Google Ads Conversions:
+                            <a href="https://www.youtube.com/watch?v=x1VvVDa5L7c" target="_blank">watch video</a>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -184,6 +206,48 @@ if ( ! defined( 'ABSPATH' ) ) {
             <hr>
 
 	    <?php endif; ?>
+
+        <?php if ( Tiktok()->enabled() ) : ?>
+
+            <div class="row align-items-center mb-3 py-2">
+                <div class="col-2">
+                    <img class="tag-logo" src="<?php echo PYS_URL; ?>/dist/images/tiktok-logo.png">
+                </div>
+                <div class="col-6">
+                    Your TikTok
+                </div>
+                <div class="col-4">
+                    <label for="tiktok_settings_switch" class="btn btn-block btn-sm btn-primary btn-settings">Click for settings</label>
+                </div>
+            </div>
+            <input type="checkbox" id="tiktok_settings_switch" style="display: none">
+            <div class="settings_content">
+
+                <div class="plate pb-3 pt-3">
+                    <div class="row">
+                        <div class="col-12">
+                            <h4 class="label mb-3 ">TikTok pixel:</h4>
+                            <?php Tiktok()->render_pixel_id( 'pixel_id', 'TikTok pixel' ); ?>
+                            <p class="small">Beta: the TikTok Tag integration is still in beta.</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <?php Tiktok()->render_switcher_input( 'advanced_matching_enabled' ); ?>
+                            <h4 class="switcher-label">Enable Advanced Matching</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <p>How to install the TikTok tag and how to get the ID: <a href="https://www.youtube.com/watch?v=vWRZc66eaPo" target="_blank">watch video</a></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <hr>
+
+        <?php endif; ?>
 
         <?php do_action( 'pys_admin_pixel_ids' ); ?>
 
@@ -204,6 +268,14 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <p><a href="https://www.youtube.com/watch?v=1W1yA9L-6F8" target="_blank">Facebook Pixel Events and Parameters (12:05 min) - watch now</a></p>
                 <p><a href="https://www.youtube.com/watch?v=sM9yNkBK6Eg" target="_blank">Potentially Violating Personal Data Sent to Facebook (7:30 min) - watch now</a></p>
                 <p><a href="https://www.youtube.com/watch?v=PsKdCkKNeLU" target="_blank">Facebook Conversion API and the Consent Problem (9:25 min) - watch now</a></p>
+
+                <p><a href="https://www.youtube.com/watch?v=jJlhnF_QNxk" target="_blank">What you MUST know about Facebook Attribution Settings (8:49) - watch now</a></p>
+                <p><a href="https://www.youtube.com/watch?v=hbecImCa9d0" target="_blank">Google Ads DATA-DRIVEN Attribution (8:14) - watch now</a></p>
+                <p><a href="https://www.youtube.com/watch?v=kEp5BDg7dP0" target="_blank">How to fire EVENTS with PixelYourSite (22:28) - watch now</a></p>
+                <p><a href="https://www.youtube.com/watch?v=HM98mGZshvc" target="_blank">Multiple Facebook Pixels with CAPI events for WordPress and WooCommerce (12:20) - watch now</a></p>
+                <p><a href="https://www.youtube.com/watch?v=JUuss5sewxg" target="_blank">Multiple Google Analytics properties on WordPress and WooCommerce (6:17) - watch now</a></p>
+
+                <p><a href="https://www.youtube.com/watch?v=vWRZc66eaPo" target="_blank">How to install the TikTok Tag on WordPress with PixelYourSite - WooCommerce Support (9:11) - watch now</a></p>
             </div>
         </div>
         <div class="row">
@@ -252,15 +324,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <div class="col">
                     <?php Ads()->render_switcher_input( 'signal_events_enabled' ); ?>
                     <h4 class="switcher-label">Enable on Google Ads</h4>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <?php if ( Pinterest()->enabled() ) : ?>
-            <div class="row">
-                <div class="col">
-                    <?php Pinterest()->render_switcher_input( 'signal_events_enabled' ); ?>
-                    <h4 class="switcher-label">Enable on Pinterest</h4>
                 </div>
             </div>
         <?php endif; ?>
@@ -351,7 +414,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
                 <div  class=" form-inline">
                     <?php PYS()->render_checkbox_input( 'signal_page_scroll_enabled',"trigger for scroll value:" ); ?>
-                    <?php PYS()->render_number_input( 'signal_page_scroll_value',null,false,100 ); ?>
+                    <?php PYS()->render_number_input( 'signal_page_scroll_value','',false,100 ); ?>
                     <div>% (add %)</div>
                 </div>
 
@@ -411,7 +474,14 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
 	    <?php endif; ?>
 
-
+        <?php if ( Tiktok()->enabled() ) : ?>
+            <div class="row">
+                <div class="col">
+                    <?php Tiktok()->render_switcher_input( 'search_event_enabled' ); ?>
+                    <h4 class="switcher-label">Enable the Search event on TikTok</h4>
+                </div>
+            </div>
+        <?php endif; ?>
 
 	    <?php if ( Pinterest()->enabled() ) : ?>
             <div class="row">
@@ -840,9 +910,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     <div class="row mb-3">
         <div class="col form-inline">
             <label>Cookie duration:</label>
-            <?php PYS()->render_number_input( 'cookie_duration',null,false,null,1 ); ?>
+            <?php PYS()->render_number_input( 'cookie_duration','',false,null,1 ); ?>
             <label>day(s)</label>
-            <small class="mt-1">We use cookies to store the <i>lading page, traffic source, and UTMs</i>. All events fired in this interval will report these values. Cookie's name: <i>pysTrafficSource, pys_landing_page, pys_utm_name</i></small>
+            <small class="mt-1">We use cookies to store the <i>landing page, traffic source, and UTMs</i>. All events fired in this interval will report these values. Cookie's name: <i>pysTrafficSource, pys_landing_page, pys_utm_name</i></small>
         </div>
     </div>
     <div class="row mb-3">

@@ -52,10 +52,30 @@ function getWooProductPrice( $product_id, $qty = 1,$customPrice = -1 ) {
 		return 0;
 	}
 
-	$productPrice = $product->get_price();
-	if($customPrice > -1) {
+    if($product->get_type() == "variable") {
+        $prices = $product->get_variation_prices( true );
+        if(empty( $prices['price'] )) {
+            $productPrice = $product->get_price();
+        } else {
+            $productPrice = current( $prices['price'] );
+        }
+
+    } else {
+        $productPrice = $product->get_price();
+    }
+
+	if($customPrice > -1 && $customPrice != "") {
         $productPrice = $customPrice;
     }
+
+    // for Woo Discount Rules
+    if(method_exists('\Wdr\App\Controllers\ManageDiscount','calculateInitialAndDiscountedPrice')) {
+        $salePrice = \Wdr\App\Controllers\ManageDiscount::calculateInitialAndDiscountedPrice($product,$qty);
+        if(is_array($salePrice) && isset($salePrice['discounted_price'])) {
+            $productPrice = $salePrice['discounted_price'];
+        }
+    }
+
 	$include_tax = PYS()->getOption( 'woo_tax_option' ) == 'included' ? true : false;
 
 	if ( $product->is_taxable() && $include_tax ) {
@@ -79,9 +99,27 @@ function getWooProductPriceToDisplay( $product_id, $qty = 1,$customPrice = -1 ) 
 	if ( ! $product = wc_get_product( $product_id ) ) {
 		return 0;
 	}
-    $productPrice = $product->get_price();
-    if($customPrice > -1) {
+    if($product->get_type() == "variable") {
+        $prices = $product->get_variation_prices( true );
+        if(empty( $prices['price'] )) {
+            $productPrice = $product->get_price();
+        } else {
+            $productPrice = current( $prices['price'] );
+        }
+
+    } else {
+        $productPrice = $product->get_price();
+    }
+    if($customPrice > -1 && $customPrice != "") {
         $productPrice = $customPrice;
+    }
+
+    // for Woo Discount Rules
+    if(method_exists('\Wdr\App\Controllers\ManageDiscount','calculateInitialAndDiscountedPrice')) {
+        $salePrice = \Wdr\App\Controllers\ManageDiscount::calculateInitialAndDiscountedPrice($product,$qty);
+        if(is_array($salePrice) && isset($salePrice['discounted_price'])) {
+            $productPrice = $salePrice['discounted_price'];
+        }
     }
 
     if($product->get_type() == "bundle") {
@@ -169,6 +207,66 @@ function getDefaultBundlePrice($product) {
     return $price;
 }
 
+/**
+ * @param SingleEvent $event
+ */
+function getWooEventCartSubtotal($event) {
+    $subTotal = 0;
+    $include_tax = get_option( 'woocommerce_tax_display_cart' ) == 'incl';
+
+    foreach ($event->args['products'] as $product) {
+        $subTotal += $product['subtotal'];
+        if($include_tax) {
+            $subTotal += $product['subtotal_tax'];
+        }
+    }
+    return pys_round($subTotal);
+}
+
+/**
+ * @param SingleEvent $event
+ */
+function getWooEventCartTotal($event) {
+
+    return getWooEventCartSubtotal($event);
+}
+/**
+ * @param SingleEvent $event
+ */
+function getWooEventOrderTotal( $event ) {
+
+    if(PYS()->getOption( 'woo_event_value' ) != 'custom') {
+        $total = 0;
+        // $include_tax = get_option( 'woocommerce_tax_display_cart' ) == 'incl';
+        foreach ($event->args['products'] as $product) {
+            $total += $product['total'] + $product['total_tax'];
+        }
+        $total+=$event->args['shipping_cost'] + $event->args['shipping_tax'];
+        return pys_round($total);
+    }
+
+    $include_tax = PYS()->getOption( 'woo_tax_option' ) == 'included' ? true : false;
+    $include_shipping = PYS()->getOption( 'woo_shipping_option' ) == 'included' ? true : false;
+
+
+    $total = 0;
+    foreach ($event->args['products'] as $product) {
+        $total += $product['total'];
+        if($include_tax) {
+            $total += $product['total_tax'];
+        }
+    }
+
+    if($include_shipping) {
+        $total += $event->args['shipping_cost'];
+    }
+    if($include_tax) {
+        $total += $product['shipping_cost_tax'];
+    }
+
+    return pys_round($total );
+
+}
 
 function getWooCartSubtotal() {
 
@@ -194,7 +292,6 @@ function getWooCartSubtotal() {
 	}
 
 	return $subtotal;
-
 }
 
 function getWooCartTotal() {
@@ -304,15 +401,17 @@ function getWooProductValue($args) {
     $product = wc_get_product($product_id);
     if(!$product) return 0;
 
-    $productPrice = $product->get_price();
+    $productPrice = "";
+
     if(!empty($args['price'])) {
         $productPrice = $args['price'];
     }
     // for cartflow product sale
     $salePrice = getWfcProductSalePrice($product,$args);
-    if($salePrice > -1) {
+    if($salePrice > -1 ) {
         $productPrice = $salePrice;
     }
+
 
 
     if($valueOption == 'cog' && isPixelCogActive()) {
@@ -387,8 +486,36 @@ function getWcfEventValueOrder( $valueOption, $wcf_offer_step_id, $global, $perc
 
     return $value;
 }
+
 /**
- * @param $valueOption
+ * @param string $valueOption  // 'global' or 'cog' or 'percent' other is default
+ * @param float $global // global value
+ * @param string $percent // percent from value from 0 to 100%
+ * @param $args // other args
+ */
+function getWooEventValueProducts( $valueOption, $global, $percent, $total, $args ) {
+
+    if($valueOption == 'global') return $global;
+
+    if($valueOption == 'percent') {
+        $percents = (float) $percent;
+        $percents = str_replace( '%', null, $percents );
+        $percents = (float) $percents / 100;
+        return (float) $total * $percents;
+    }
+
+    if($valueOption == 'cog' && isPixelCogActive()) {
+        $cog_value = getAvailableProductCogOrder($args);
+        if($cog_value !== '') {
+            return (float) round($cog_value, 2);
+        }
+    }
+
+    return (float) $total;
+}
+/**
+ * @deprecated
+ * @param  $valueOption
  * @param \WC_Order $order
  * @param $global
  * @param $order_id
@@ -429,6 +556,14 @@ function getWooEventValueOrder( $valueOption, $order, $global, $percent = 100 ) 
 
 }
 
+
+/**
+ * @deprecated
+ * @param $valueOption
+ * @param $global
+ * @param int $percent
+ * @return bool|float|int|mixed|string|\WC_Tax
+ */
 function getWooEventValueCart( $valueOption, $global, $percent = 100 ) {
 
 

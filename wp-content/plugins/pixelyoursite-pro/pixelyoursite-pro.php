@@ -3,8 +3,8 @@
 /**
  * Plugin Name: PixelYourSite PRO
  * Plugin URI: http://www.pixelyoursite.com/
- * Description: Implement the Facebook Pixel, Facebook Conversion API, Google Analytics, and the Google Ads Tag. Track key actions with automatic events, or create your own events. WooCommerce and EDD fully supported, with Facebook Dynamic Ads Pixel set-up,  Google Analytics Enhanced Ecommerce, and Dynamic Remarketing. Full support for <a href="https://www.consentmagic.com/?utm_source=PixelYourSite&utm_medium=Professional&utm_campaign=Description-link" target="_blank">ConsentMagic.com</a>.
- * Version: 8.4.1
+ * Description: Implement the Facebook Pixel, Facebook Conversion API, Google Analytics, the Google Ads Tag and the TikTok Tag. Track key actions with automatic events, or create your own events. WooCommerce and EDD fully supported, with Facebook Dynamic Ads Pixel set-up,  Google Analytics Enhanced Ecommerce, and Dynamic Remarketing. Full support for <a href="https://www.consentmagic.com/?utm_source=PixelYourSite&utm_medium=Professional&utm_campaign=Description-link" target="_blank">ConsentMagic.com</a>.
+ * Version: 8.6.6
  * Author: PixelYourSite
  * Author URI: http://www.pixelyoursite.com
  * License URI: http://www.pixelyoursite.com/pixel-your-site-pro-license
@@ -13,7 +13,7 @@
  * Tested up to: 5.8
  *
  * WC requires at least: 2.6.0
- * WC tested up to: 5.5
+ * WC tested up to: 6.1
  *
  * Text Domain: pys
  */
@@ -22,10 +22,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly.
 }
 
-
-define( 'PYS_VERSION', '8.4.1' );
+define( 'PYS_VERSION', '8.6.6' );
 define( 'PYS_PINTEREST_MIN_VERSION', '3.0.0' );
-define( 'PYS_SUPER_PACK_MIN_VERSION', '2.0.3' );
+define( 'PYS_SUPER_PACK_MIN_VERSION', '3.0.2' );
 define( 'PYS_BING_MIN_VERSION', '2.0.0' );
 define( 'PYS_PLUGIN_NAME', 'PixelYourSite Professional' );
 define( 'PYS_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
@@ -57,6 +56,7 @@ if ( isPysFreeActive() ) {
     return; // exit early when PYS Free is active
 }
 require_once PYS_PATH.'/vendor/autoload.php';
+require_once PYS_PATH.'/includes/logger/class-pys-logger.php';
 require_once PYS_PATH.'/includes/class-event-id-generator.php';
 require_once PYS_PATH.'/includes/functions-common.php';
 require_once PYS_PATH.'/includes/functions-cartflows.php';
@@ -87,6 +87,7 @@ require_once PYS_PATH.'/includes/class-pys.php';
 require_once PYS_PATH.'/includes/class-events-manager.php';
 require_once PYS_PATH.'/includes/class-custom-event.php';
 require_once PYS_PATH.'/includes/class-custom-event-factory.php';
+require_once PYS_PATH.'/modules/tiktok/tiktok.php';
 require_once PYS_PATH.'/modules/facebook/facebook.php';
 require_once PYS_PATH.'/modules/facebook/facebook-server.php';
 require_once PYS_PATH.'/modules/google_analytics/ga.php';
@@ -95,6 +96,6 @@ require_once PYS_PATH.'/modules/head_footer/head_footer.php';
 require_once PYS_PATH.'/includes/enrich/class_enrich_order.php';
 require_once PYS_PATH.'/includes/enrich/class-enrich_user.php';
 require_once PYS_PATH.'/includes/class-events-manager-ajax_hook.php';
-
+require_once PYS_PATH.'/includes/class-fixed-notices.php';
 // here we go...
 PixelYourSite\PYS();

@@ -6,6 +6,7 @@
   "google_retargeting_logic": "radio",
 
   "gdpr_facebook_prior_consent_enabled": "checkbox",
+  "gdpr_tiktok_prior_consent_enabled": "checkbox",
   "gdpr_analytics_prior_consent_enabled": "checkbox",
   "gdpr_google_ads_prior_consent_enabled": "checkbox",
   "gdpr_pinterest_prior_consent_enabled": "checkbox",
@@ -198,5 +199,6 @@
   "wcf_global_cartflows_parameter_enabled": "checkbox",
   "wcf_global_cartflows_flow_parameter_enabled": "checkbox",
   "wcf_global_cartflows_step_parameter_enabled": "checkbox",
-  "wcf_purchase_on": "radio"
+  "wcf_purchase_on": "radio",
+  "logs_enable": "checkbox"
 }

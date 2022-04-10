@@ -9,7 +9,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 
+/**
+ * Check if WPML plugin installed and activated.
+ *
+ * @return bool
+ */
+function isWPMLActive() {
 
+    if ( ! function_exists( 'is_plugin_active' ) ) {
+        include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+    }
+
+    return is_plugin_active( 'sitepress-multilingual-cms/sitepress.php' );
+}
 /**
  * Check if Pixel Cost of goods plugin installed and activated.
  *
@@ -265,8 +277,8 @@ function getAvailableProductCog($product) {
 
 }
 
-function getAvailableProductCogOrder($order_id) {
-	$order = wc_get_order( $order_id );
+function getAvailableProductCogOrder($args) {
+
 	$order_total = 0.0;
 	$cost = 0;
 	$notice = '';
@@ -274,66 +286,61 @@ function getAvailableProductCogOrder($order_id) {
 	$cat_isset = 0;
     $isWithoutTax = get_option( '_pixel_cog_tax_calculating')  == 'no';
 
-    $shipping = $order->get_shipping_total("edit");
-    $order_total = $order->get_total('edit') - $shipping;
-
-    if($isWithoutTax) {
-        $order_total -=  $order->get_total_tax('edit');
-    } else {
-        $order_total -= $order->get_shipping_tax("edit");
-    }
-
-	foreach ( $order->get_items() as $item_id => $item ) {
-		$product_id = ( isset( $item['variation_id'] ) && 0 != $item['variation_id'] ? $item['variation_id'] : $item['product_id'] );
-        $product = wc_get_product($product_id);
-        if(!$product) continue;
-
-        $cost_type = get_post_meta( $product->get_id(), '_pixel_cost_of_goods_cost_type', true );
-        $product_cost = get_post_meta( $product->get_id(), '_pixel_cost_of_goods_cost_val', true );
-
-        if(!$product_cost && $product->is_type("variation")) {
-            $cost_type = get_post_meta( $product->get_parent_id(), '_pixel_cost_of_goods_cost_type', true );
-            $product_cost = get_post_meta( $product->get_parent_id(), '_pixel_cost_of_goods_cost_val', true );
+    foreach ($args['products'] as $productData) {
+        $order_total += (float)$productData['total'];
+        if(!$isWithoutTax) {
+            $order_total += (float)$productData['total_tax'];
         }
 
+        $product_id = $productData['product_id'];
+        $productObject = wc_get_product($product_id);
+        if(!$productObject) continue;
 
-        $args = array( 'qty'   => 1, 'price' => $product->get_price());
-        $qlt = $item['quantity'];
+        $cost_type = get_post_meta( $productObject->get_id(), '_pixel_cost_of_goods_cost_type', true );
+        $product_cost = get_post_meta( $productObject->get_id(), '_pixel_cost_of_goods_cost_val', true );
 
-		if($isWithoutTax) {
-            $price = wc_get_price_excluding_tax($product, $args);
+        if(!$product_cost && $productObject->is_type("variation")) {
+            $cost_type = get_post_meta( $productObject->get_parent_id(), '_pixel_cost_of_goods_cost_type', true );
+            $product_cost = get_post_meta( $productObject->get_parent_id(), '_pixel_cost_of_goods_cost_val', true );
+        }
+
+        $args = array( 'qty'   => 1, 'price' => $productObject->get_price());
+        $qlt = $productData['quantity'];
+
+        if($isWithoutTax) {
+            $price = wc_get_price_excluding_tax($productObject, $args);
         } else {
-            $price = wc_get_price_including_tax($product,$args);
+            $price = wc_get_price_including_tax($productObject,$args);
         }
 
-		if ($product_cost) {
-			$cost = ($cost_type == 'percent') ? $cost + ($price * ($product_cost / 100) * $qlt) : $cost + ($product_cost * $qlt);
-			$custom_total = $custom_total + ($price * $qlt);
-		} else {
-			$product_cost = get_product_cost_by_cat( $product_id );
-			$cost_type = get_product_type_by_cat( $product_id );
-			if ($product_cost) {
-				$cost = ($cost_type == 'percent') ? $cost + ($price * ($product_cost / 100) * $qlt) : $cost + ($product_cost * $qlt);
-				$custom_total = $custom_total + ($price * $qlt);
-				$notice = "Category Cost of Goods was used for some products.";
-				$cat_isset = 1;
-			} else {
-				$product_cost = get_option( '_pixel_cost_of_goods_cost_val');
-				$cost_type = get_option( '_pixel_cost_of_goods_cost_type' );
-				if ($product_cost) {
-					$cost = ($cost_type == 'percent') ? (float) $cost + ((float) $price * ((float) $product_cost / 100) * $qlt) : (float) $cost + ((float) $product_cost * $qlt);
-					$custom_total = $custom_total + ($price * $qlt);
-					if ($cat_isset == 1) {
-						$notice = "Global and Category Cost of Goods was used for some products.";
-					} else {
-						$notice = "Global Cost of Goods was used for some products.";
-					}
-				} else {
-					$notice = "Some products don't have Cost of Goods.";
-				}
-			}
-		}
-	}
+        if ($product_cost) {
+            $cost = ($cost_type == 'percent') ? $cost + ($price * ($product_cost / 100) * $qlt) : $cost + ($product_cost * $qlt);
+            $custom_total = $custom_total + ($price * $qlt);
+        } else {
+            $product_cost = get_product_cost_by_cat( $product_id );
+            $cost_type = get_product_type_by_cat( $product_id );
+            if ($product_cost) {
+                $cost = ($cost_type == 'percent') ? $cost + ($price * ($product_cost / 100) * $qlt) : $cost + ($product_cost * $qlt);
+                $custom_total = $custom_total + ($price * $qlt);
+                $notice = "Category Cost of Goods was used for some products.";
+                $cat_isset = 1;
+            } else {
+                $product_cost = get_option( '_pixel_cost_of_goods_cost_val');
+                $cost_type = get_option( '_pixel_cost_of_goods_cost_type' );
+                if ($product_cost) {
+                    $cost = ($cost_type == 'percent') ? (float) $cost + ((float) $price * ((float) $product_cost / 100) * $qlt) : (float) $cost + ((float) $product_cost * $qlt);
+                    $custom_total = $custom_total + ($price * $qlt);
+                    if ($cat_isset == 1) {
+                        $notice = "Global and Category Cost of Goods was used for some products.";
+                    } else {
+                        $notice = "Global Cost of Goods was used for some products.";
+                    }
+                } else {
+                    $notice = "Some products don't have Cost of Goods.";
+                }
+            }
+        }
+    }
 
     return $order_total - $cost;
 
@@ -527,8 +534,11 @@ function getStandardParams() {
         $slug = get_query_var( 'tag' );
         $term = get_term_by( 'slug', $slug, 'post_tag' );
         $params['post_type']    = 'tag';
-        $params['post_id']      = $term->term_id;
-        $params['page_title']   = $term->name;
+        if($term) {
+            $params['post_id']      = $term->term_id;
+            $params['page_title']   = $term->name;
+        }
+
 
     } elseif (is_tax()) {
         $term = get_term_by( 'slug', get_query_var( 'term' ), get_query_var( 'taxonomy' ) );
@@ -591,7 +601,7 @@ function getObjectTerms( $taxonomy, $post_id ) {
 
 	// decode special chars
 	foreach ( $terms as $term ) {
-		$results[] = html_entity_decode( $term->name );
+		$results[$term->term_id] = html_entity_decode( $term->name );
 	}
 
 	return $results;
@@ -753,115 +763,6 @@ function compareURLs( $url, $base = '', $rule = 'match' ) {
 		return false;
 
 	}
-
-}
-
-/**
- * Adds 'pys-event-id' data attribute to HTML tags on content and widgets in case if href attribute match to an
- * custom event "url_click" trigger condition.
- *
- * @param $content
- *
- * @return mixed
- */
-function filterContentUrls( $content ) {
-
-	// don't do a thing if there's no anchor at all
-	if ( false === stripos( $content, '<a ' ) ) {
-		return $content;
-	}
-
-	$events = array();
-
-	/**
-	 * Collect all click on URL triggers.
-	 * Dynamic events are already filtered by status and current page URL.
-	 */
-	foreach ( CustomEventFactory::get( 'active' ) as $event ) {
-		/** @var CustomEvent $event */
-
-		if( 'url_click' !== $event->getTriggerType() ) {
-			continue;
-		}
-
-		$urlFilters = $event->getURLFilters();
-
-		// match URL filters with current page URL
-		if ( ! empty( $urlFilters ) && ! compareURLs( $urlFilters ) ) {
-			continue;
-		}
-
-		$eventId = $event->getPostId();
-		$eventTriggers = $event->getURLClickTriggers();
-
-		// no triggers were defined
-		if ( empty( $eventTriggers ) ) {
-			continue;
-		}
-
-		if ( ! isset( $events[ $eventId ] ) ) {
-			$events[ $eventId ] = array();
-		}
-
-		$events[ $eventId ] = array_merge( $events[ $eventId ], $eventTriggers );
-
-	}
-
-	// no suitable events were found at all
-	if ( empty( $events ) ) {
-		return $content;
-	}
-
-	$oldContent = array();
-	$newContent = array();
-
-	// find all occurrences of anchors and fill matches with links
-	preg_match_all( '#(<a\s[^>]+?>).*?</a>#iu', $content, $tags, PREG_SET_ORDER );
-
-	foreach ( $tags as $tag ) {
-
-		// get a href attribute value
-		$href = preg_replace( '/^.*href="([^"]*)".*$/iu', '$1', $tag[0] );
-
-		// not found or not set
-		if ( ! isset( $href ) || empty( $href ) || '#' == $href ) {
-			continue;
-		}
-
-		foreach ( $events as $eventId => $eventTriggers ) {
-
-			foreach ( $eventTriggers as $eventTrigger ) {
-
-				if ( ! compareURLs( $eventTrigger['value'], $href, $eventTrigger['rule'] ) ) {
-					continue;
-				} else {
-
-					// add dynamic event ID to element attributes
-					$newTag = insertTagAttribute( 'data-pys-event-id', $eventId, $tag[0], false );
-
-					// add new tag to replacement list
-					$oldContent[] = $tag[0];
-					$newContent[] = $newTag;
-
-					// overwrite old tag to allow attaching multiple events
-					$tag[0] = $newTag;
-
-					break;  // we'd found at least one match, no sense to check other URLs for same event
-
-				}
-
-			}
-
-		}
-
-	}
-
-	// replace content
-	if ( ! empty( $oldContent ) && ! empty( $newContent ) ) {
-		$content = str_replace( $oldContent, $newContent, $content );
-	}
-
-	return $content;
 
 }
 
@@ -1078,6 +979,13 @@ function isEventEnabled( $eventName ) {
 
 	return false;
 
+}
+
+function pys_round( $val, $precision = 2, $mode = PHP_ROUND_HALF_UP )  {
+    if ( ! is_numeric( $val ) ) {
+        $val = floatval( $val );
+    }
+    return round( $val, $precision, $mode );
 }
 
 /**

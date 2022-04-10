@@ -95,15 +95,15 @@ class EventsCustom extends EventsFactory {
         switch ($event->getTriggerType()) {
             case 'post_type' :
             case 'page_visit': {
-                $singleEvent = new SingleEvent('custom_event',EventTypes::$STATIC);
+                $singleEvent = new SingleEvent('custom_event',EventTypes::$STATIC,self::getSlug());
                 $singleEvent->args = $event;
                 $eventObject = $singleEvent;
             } break;
 
             case 'url_click': {
                 foreach ($event->getURLClickTriggers() as $trigger)
-                    $payload['trigger_value'][] = $trigger['value'];
-                $singleEvent = new SingleEvent('custom_event',EventTypes::$TRIGGER);
+                    $payload['trigger_value'] = $trigger;
+                $singleEvent = new SingleEvent('custom_event',EventTypes::$TRIGGER,self::getSlug());
                 $singleEvent->addPayload($payload);
                 $singleEvent->args = $event;
                 $eventObject = $singleEvent;
@@ -111,7 +111,7 @@ class EventsCustom extends EventsFactory {
             case 'css_click': {
                 foreach ($event->getCSSClickTriggers() as $trigger)
                     $payload['trigger_value'][] = $trigger['value'];
-                $singleEvent = new SingleEvent('custom_event',EventTypes::$TRIGGER);
+                $singleEvent = new SingleEvent('custom_event',EventTypes::$TRIGGER,self::getSlug());
                 $singleEvent->args = $event;
                 $singleEvent->addPayload($payload);
                 $eventObject = $singleEvent;
@@ -119,7 +119,7 @@ class EventsCustom extends EventsFactory {
             case 'css_mouseover': {
                 foreach ($event->getCSSMouseOverTriggers() as $trigger)
                     $payload['trigger_value'][] = $trigger['value'];
-                $singleEvent = new SingleEvent('custom_event',EventTypes::$TRIGGER);
+                $singleEvent = new SingleEvent('custom_event',EventTypes::$TRIGGER,self::getSlug());
                 $singleEvent->args = $event;
                 $singleEvent->addPayload($payload);
                 $eventObject = $singleEvent;
@@ -127,7 +127,7 @@ class EventsCustom extends EventsFactory {
             case 'scroll_pos': {
                 foreach ($event->getScrollPosTriggers() as $trigger)
                     $payload['trigger_value'][] = $trigger['value'];
-                $singleEvent = new SingleEvent('custom_event',EventTypes::$TRIGGER);
+                $singleEvent = new SingleEvent('custom_event',EventTypes::$TRIGGER,self::getSlug());
                 $singleEvent->args = $event;
                 $singleEvent->addPayload($payload);
                 $eventObject = $singleEvent;

@@ -23,6 +23,11 @@ final class PYS extends Settings implements Plugin {
     private $registeredPlugins = array();
 
     private $adminPagesSlugs = array();
+
+    /**
+     * @var PYS_Logger
+     */
+    private $logger;
 	
 	public static function instance() {
 		
@@ -119,6 +124,8 @@ final class PYS extends Settings implements Plugin {
 
         add_action('edited_download_category', array($this,'save_product_category_fb_edd_pixel_field'));
         add_action('create_download_category', array($this,'save_product_category_fb_edd_pixel_field'));
+
+        $this->logger = new PYS_Logger();
     }
 
     public function init() {
@@ -157,6 +164,7 @@ final class PYS extends Settings implements Plugin {
 	    }
 
         EnrichOrder()->init();
+	    $this->logger->init();
         AjaxHookEventManager::instance()->addHooks();
     }
 	
@@ -178,20 +186,53 @@ final class PYS extends Settings implements Plugin {
 			    continue;
 		    }
 		
-		    $this->addOption( 'general_event_on_' . $post_type->name . '_enabled', 'checkbox', false );
-		
 	    }
 	
-        maybeMigrate();
-        
-        $psyoptions = array(
-            'license_key'     => '1415b451be1a13c283ba771ea52d38bb',
-            'license_status'  => 'valid',
-            'license_expires' => '1500000000000',
-        );
-    
-        PYS()->updateOptions( $psyoptions);
+	    maybeMigrate();
 	    
+    }
+
+    public function import_custom_events() {
+        if(isset($_FILES["import_events_file"])) {
+            if($_FILES["import_events_file"]['size'] == 0) {
+                wp_send_json_error("File is empty ");
+                return;
+            }
+            if( $_FILES["import_events_file"]['type'] != "application/json") {
+                wp_send_json_error("File has wrong format ".$_FILES["import_events_file"]['type']);
+                return;
+            }
+            $content = file_get_contents($_FILES["import_events_file"]['tmp_name']);
+            $data = json_decode($content,true);
+
+            if(!isset($data['events'])) {
+                wp_send_json_error("Events not found");
+                return;
+            }
+
+            // replace new site url
+            $oldSiteUrl = str_replace("/","\/",$data["site_url"]);
+            $siteUrl = str_replace("/","\/",site_url());
+            $content = str_replace($oldSiteUrl,$siteUrl,$content);
+
+            $data = json_decode(  $content,true);
+
+            // create custom events
+            foreach ($data['events'] as $event) {
+                CustomEventFactory::import($event);
+            }
+            wp_send_json_success("OK");
+        } else {
+            wp_send_json_error("File not found");
+        }
+    }
+
+    public function generate_event_export_json() {
+        if(isset($_GET['tab']) && $_GET['tab'] == "events"  &&
+            isset($_GET['action']) && $_GET['action'] == 'export' ) {
+            include "views/html-main-events-export.php";
+            die();
+        }
     }
 	
 	/**
@@ -261,7 +302,7 @@ final class PYS extends Settings implements Plugin {
 
 	    // at least one pixel should be configured
 	    if ( ! Facebook()->configured() && ! GA()->configured() && ! Ads()->configured()
-            && ! Pinterest()->configured() && ! Bing()->configured() ) {
+            && ! Pinterest()->configured() && ! Bing()->configured() && ! Tiktok()->configured() ) {
 
 		    add_action( 'wp_head', function() {
 			    echo "<script type='application/javascript'>console.warn('PixelYourSite PRO: no pixel configured.');</script>\r\n";
@@ -281,6 +322,7 @@ final class PYS extends Settings implements Plugin {
 	    wp_send_json_success( array(
 		    'all_disabled_by_api'       => apply_filters( 'pys_disable_by_gdpr', false ),
 		    'facebook_disabled_by_api'  => apply_filters( 'pys_disable_facebook_by_gdpr', false ),
+            'tiktok_disabled_by_api'  => apply_filters( 'pys_disable_tiktok_by_gdpr', false ),
 		    'analytics_disabled_by_api' => apply_filters( 'pys_disable_analytics_by_gdpr', false ),
             'google_ads_disabled_by_api' => apply_filters( 'pys_disable_google_ads_by_gdpr', false ),
 		    'pinterest_disabled_by_api' => apply_filters( 'pys_disable_pinterest_by_gdpr', false ),
@@ -329,7 +371,7 @@ final class PYS extends Settings implements Plugin {
      
     }
 
-    function add_product_category_fb_pixel_field($term) {
+    public function add_product_category_fb_pixel_field($term) {
 
         if(!Facebook()->enabled()) return;
 
@@ -387,7 +429,7 @@ final class PYS extends Settings implements Plugin {
         }
     }
 
-    function save_product_category_fb_woo_pixel_field($term_id) {
+    public function save_product_category_fb_woo_pixel_field($term_id) {
         $id = filter_input(INPUT_POST, 'pys_fb_pixel_id');
         $serverId = filter_input(INPUT_POST, 'pys_fb_pixel_server_id');
         $testCode = filter_input(INPUT_POST, 'pys_fb_pixel_server_test_code');
@@ -423,7 +465,7 @@ final class PYS extends Settings implements Plugin {
         Facebook()->updateOptions(array("category_pixel_server_test_code" => $categoryServerTestCode));
     }
 
-    function add_product_category_fb_edd_pixel_field($term) {
+    public function add_product_category_fb_edd_pixel_field($term) {
 
         if(!Facebook()->enabled()) return;
 
@@ -481,7 +523,7 @@ final class PYS extends Settings implements Plugin {
         }
     }
 
-    function save_product_category_fb_edd_pixel_field($term_id) {
+    public function save_product_category_fb_edd_pixel_field($term_id) {
         $id = filter_input(INPUT_POST, 'pys_fb_pixel_id');
         $serverId = filter_input(INPUT_POST, 'pys_fb_pixel_server_id');
         $testCode = filter_input(INPUT_POST, 'pys_fb_pixel_server_test_code');
@@ -579,7 +621,8 @@ final class PYS extends Settings implements Plugin {
 		
 		// redirect to license page in case if license was never activated
 		if ( $is_dashboard && empty( $license_status ) ) {
-			update_option( 'license_status', 'valid' );
+			wp_safe_redirect( buildAdminUrl( 'pixelyoursite_licenses' ) );
+			exit;
 		}
 		
 	}
@@ -934,7 +977,7 @@ final class PYS extends Settings implements Plugin {
     
     }
 
-    function restoreSettingsAfterCog() {
+    public function restoreSettingsAfterCog() {
         $old = Facebook()->getOption("woo_complete_registration_custom_value_old");
         if(!empty($old) ) {
             Facebook()->updateOptions(array(
@@ -970,6 +1013,10 @@ final class PYS extends Settings implements Plugin {
         $params['woo_initiate_checkout_value_cog'] = '';
 
         $this->updateOptions($params);
+    }
+
+    public function getLog() {
+	    return $this->logger;
     }
 
 }

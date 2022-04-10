@@ -67,7 +67,7 @@ class Pinterest extends Settings implements Pixel {
 	public function renderCustomEventOptions( $event ) {}
  
 	public function renderAddonNotice() {
-	    echo '&nbsp;<a href="https://www.pixelyoursite.com/pinterest-tag" target="_blank" class="badge badge-pill badge-secondary">Requires free add-on</a>';
+	    echo '&nbsp;<a href="https://www.pixelyoursite.com/pinterest-tag" target="_blank" class="badge badge-pill badge-secondary">Requires paid add-on</a>';
     }
 
     public function renderPixelIdField() {
@@ -78,7 +78,7 @@ class Pinterest extends Settings implements Pixel {
                 <img class="tag-logo" src="<?php echo PYS_URL; ?>/dist/images/pinterest-square-small.png">
             </div>
             <div class="col-10">
-                <h4 class="label">Add the Pinterest tag with our <a href="https://www.pixelyoursite.com/pinterest-tag?utm_source=pixelyoursite-pro-plugin&utm_medium=plugin&utm_campaign=pro-plugin-pinterest" target="_blank">FREE add-on.</a></h4>
+                <h4 class="label">Add the Pinterest tag with our <a href="https://www.pixelyoursite.com/pinterest-tag?utm_source=pixelyoursite-pro-plugin&utm_medium=plugin&utm_campaign=pro-plugin-pinterest" target="_blank">Paid add-on.</a></h4>
             </div>
         </div>
         <hr>

@@ -30,19 +30,36 @@ class AjaxHookEventManager {
 
 
         if(EventsWoo()->isEnabled()) {
-            if ( isEventEnabled('woo_add_to_cart_enabled')
-                && PYS()->getOption('woo_add_to_cart_on_button_click')
-                && PYS()->getOption('woo_add_to_cart_catch_method') == "add_cart_hook"
+            if ( PYS()->getOption('woo_add_to_cart_on_button_click')
+                && isEventEnabled('woo_add_to_cart_enabled')
             )
             {
-                add_action( 'wp_footer', array( __CLASS__, 'addDivForAjaxPixelEvent')  );
-                add_action( 'woocommerce_add_to_cart',array(__CLASS__, 'trackWooAddToCartEvent'),40, 6);
+                if(PYS()->getOption('woo_add_to_cart_catch_method') == "add_cart_hook"){
+                    add_action( 'wp_footer', array( __CLASS__, 'addDivForAjaxPixelEvent')  );
+                    add_action( 'woocommerce_add_to_cart',array(__CLASS__, 'trackWooAddToCartEvent'),40, 6);
+                } else {
+                    add_action( 'woocommerce_after_add_to_cart_button', 'PixelYourSite\EventsManager::setupWooSingleProductData' );
+                }
             }
         }
+       // if(isWcfActive()) {
+            add_action( 'cartflows_offer_product_processed',array( __CLASS__, 'wcf_save_last_offer_step' ), 10,3);
+       // }
+
+
     }
 
+    /**
+     * @param \WC_Order $order
+     * @param $product_data
+     * @param $child_order
+     */
+    public static function wcf_save_last_offer_step($order, $product_data, $child_order) {
+        $order->update_meta_data('pys_wcf_last_offer_step',$product_data['step_id']);
+        $order->save();
+    }
 
-static function trackWooAddToCartEvent($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data) {
+    static function trackWooAddToCartEvent($cart_item_key, $product_id, $quantity, $variation_id, $variation, $cart_item_data) {
 
         if(isWcfStep()) return; // this event will fire from js for Wcf
 
@@ -53,6 +70,8 @@ static function trackWooAddToCartEvent($cart_item_key, $product_id, $quantity, $
             $is_ajax_request = true;
         }
         $standardParams = getStandardParams();
+
+        PYS()->getLog()->debug('trackWooAddToCartEvent is_ajax_request '.$is_ajax_request);
 
         foreach ( PYS()->getRegisteredPixels() as $pixel ) {
 
@@ -70,48 +89,46 @@ static function trackWooAddToCartEvent($cart_item_key, $product_id, $quantity, $
             }
 
 
-            $event = new SingleEvent('woo_add_to_cart_on_button_click',EventTypes::$STATIC);
+            $event = new SingleEvent('woo_add_to_cart_on_button_click',EventTypes::$STATIC,"woo");
             $event->args = ['productId' => $_product_id,'quantity' => $quantity];
-            $isSuccess = $pixel->addParamsToEvent( $event );
-            if ( !$isSuccess ) {
-                continue; // event is disabled or not supported for the pixel
-            }
 
-            if(count($event->params) == 0) {
-                // add product params
-                // use for not update bing and pinterest, need remove in next updates
-                $eventData = $pixel->getEventData('woo_add_to_cart_on_button_click',$product_id);
-                if($eventData) {
-                    $event->addParams($eventData['params']);
-                    unset($eventData['params']);
-                    $event->addPayload($eventData);
+            $pixelEvents = [];
+            if(method_exists($pixel,'generateEvents')) {
+                add_filter('pys_conditional_post_id', function($id) use ($product_id) { return $product_id; });
+                $pixelEvents =  $pixel->generateEvents( $event );
+                remove_all_filters('pys_conditional_post_id');
+            } else {
+                $isSuccess = $pixel->addParamsToEvent( $event );
+                if ( $isSuccess ) {
+                    $pixelEvents[] = $event;
                 }
             }
 
+            if(count($pixelEvents) == 0) continue;
+            $event = $pixelEvents[0];
 
 
             // add standard params
-            if($pixel->getSlug() != "ga" || $pixel->isUse4Version()) {
+            if($pixel->getSlug() != "tiktok") {
                 $event->addParams($standardParams);
             }
 
             // prepare event data
             $eventData = $event->getData();
-            $eventData = EventsManager::filterEventParams($eventData,"woo");
+            $eventData = EventsManager::filterEventParams($eventData,"woo",[
+                                                                'event_id'=>$event->getId(),
+                                                                'pixel'=>$pixel->getSlug(),
+                                                                'product_id'=>$product_id
+                                                            ]);
 
             AjaxHookEventManager::$pendingEvents["woo_add_to_cart_on_button_click"][ $pixel->getSlug() ] = $eventData;
 
             if($pixel->getSlug() == "facebook" && Facebook()->isServerApiEnabled()) {
-                $name = $eventData['name'];
-                $data = $eventData['params'];
-                $eventID = isset($eventData['eventID']) ? $eventData['eventID'] : false;
-                $ids = (array)$event->payload["pixelIds"];
-                $event = FacebookServer()->createEvent($eventID,$name,$data);
 
                 if($is_ajax_request) {
-                    FacebookServer()->sendEvent($ids,array($event));
+                    FacebookServer()->sendEventsNow(array($event));
                 } else {
-                    FacebookServer()->addAsyncEvents(array(array("pixelIds" => $ids, "event" => $event )));
+                    FacebookServer()->sendEventsAsync(array($event));
                 }
             }
         }
@@ -130,6 +147,7 @@ static function trackWooAddToCartEvent($cart_item_key, $product_id, $quantity, $
     public static function printEvent() {
         $pixelsEventData = self::$pendingEvents["woo_add_to_cart_on_button_click"];
         if( !is_null($pixelsEventData) ) {
+            PYS()->getLog()->debug('trackWooAddToCartEvent printEvent is footer');
             echo "<div id='pys_late_event' style='display:none' dir='".json_encode($pixelsEventData)."'></div>";
             unset(self::$pendingEvents["woo_add_to_cart_on_button_click"]);
         }
@@ -170,7 +188,7 @@ static function trackWooAddToCartEvent($cart_item_key, $product_id, $quantity, $
 
         $pixelsEventData = self::$pendingEvents["woo_add_to_cart_on_button_click"];
         if( !is_null($pixelsEventData) ){
-
+            PYS()->getLog()->debug('addPixelCodeToAddToCartFragment send data with fragment');
             $pixel_code = self::generatePixelCode($pixelsEventData);
             $fragments['#'.self::$DIV_ID_FOR_AJAX_EVENTS] =
                 self::getDivForAjaxPixelEvent($pixel_code);

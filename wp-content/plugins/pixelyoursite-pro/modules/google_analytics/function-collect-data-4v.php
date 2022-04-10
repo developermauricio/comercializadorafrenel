@@ -1,20 +1,6 @@
 <?php
 use PixelYourSite\GA\Helpers;
 
-function getSearchEventDataV4() {
-
-    if ( ! PixelYourSite\GA()->getOption( 'search_event_enabled' ) ) {
-        return false;
-    }
-    $params = array();
-    $params['search'] = empty( $_GET['s'] ) ? null : $_GET['s'];
-
-    return array(
-        'name'  => 'search',
-        'data'  => $params,
-    );
-
-}
 
 function getCompleteRegistrationEventParamsV4() {
 

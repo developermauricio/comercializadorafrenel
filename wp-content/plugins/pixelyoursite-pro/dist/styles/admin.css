@@ -54,12 +54,17 @@
 #pys  .settings_content {
     display: none;
 }
+#pys #tiktok_settings_switch:checked + .settings_content,
 #pys #bing_settings_switch:checked + .settings_content,
 #pys #pin_settings_switch:checked + .settings_content,
 #pys #gads_settings_switch:checked + .settings_content,
 #pys #gan_settings_switch:checked + .settings_content,
 #pys #fb_settings_switch:checked + .settings_content {
     display: block;
+}
+#pys .tag-logo {
+    width: 50px;
+    height: 50px;
 }
 #pys .pys_btn_orange {
     color: #fff;
